@@ -1,43 +1,52 @@
 HELP.md
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### STS ###
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.sample
+!.env.example
+
+# IDE / editor files
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+
+# Java / Gradle (backend)
+backend/.gradle/
+backend/build/
+!backend/gradle/wrapper/gradle-wrapper.jar
+bin/
+out/
 .apt_generated
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
 .sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 /.nb-gradle/
 
-### VS Code ###
-.vscode/
+# Node / Next.js (frontend)
+frontend/node_modules/
+frontend/.next/
+frontend/.pnpm-store/
+frontend/dist/
+frontend/out/
+frontend/.turbo/
+frontend/coverage/
 
-# Node / frontend
-node_modules/
-.next/
-dist/
-.env
+# Sonar / scanner artifacts
+.scannerwork/
+.sonar/
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*

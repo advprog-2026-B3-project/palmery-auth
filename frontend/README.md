@@ -1,21 +1,22 @@
-Minimal Next.js frontend for auth UI
+# Palmery Auth Frontend (Next.js 16)
 
-Quick start
-
-1. Install dependencies
+## Run locally
 
 ```bash
-npm install
+pnpm install
+pnpm dev
 ```
 
-2. Run dev server
+Open `http://localhost:3000`.
 
-```bash
-npm run dev
-```
+## Environment
 
-3. Open http://localhost:3000
+Copy `.env.sample` to `.env.local` and adjust values if needed.
 
-Notes
-- Registration form posts to `http://localhost:8080/api/register` by default. Adjust if your backend runs on a different port.
-- This scaffold uses the `pages/` router for simplicity.
+The frontend calls backend endpoints:
+- `POST /api/auth/register`
+- `POST /api/auth/token`
+- `POST /api/auth/introspect`
+- `GET /api/debug/integration`
+- `POST /api/debug/events`
+- `GET /api/debug/events`

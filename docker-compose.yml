@@ -1,0 +1,33 @@
+services:
+  auth-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: palmery-auth-backend
+    environment:
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      AUTH_ISSUER: ${AUTH_ISSUER:-http://localhost:8080}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:-replace-this-secret-with-at-least-32-characters}
+      AUTH_ACCESS_TOKEN_TTL_SECONDS: ${AUTH_ACCESS_TOKEN_TTL_SECONDS:-3600}
+      AUTH_ALLOWED_ORIGINS: ${AUTH_ALLOWED_ORIGINS:-http://localhost:3000}
+      AUTH_SERVICE_CLIENT_ID: ${AUTH_SERVICE_CLIENT_ID:-palmery-internal-service}
+      AUTH_SERVICE_CLIENT_SECRET: ${AUTH_SERVICE_CLIENT_SECRET:-replace-with-service-client-secret}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:h2:mem:authdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-sa}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
+      SPRING_H2_CONSOLE_ENABLED: ${SPRING_H2_CONSOLE_ENABLED:-true}
+    ports:
+      - "8080:8080"
+
+  auth-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_AUTH_API_BASE_URL: ${NEXT_PUBLIC_AUTH_API_BASE_URL:-http://localhost:8080}
+    container_name: palmery-auth-frontend
+    depends_on:
+      - auth-backend
+    ports:
+      - "3000:3000"
