@@ -1,0 +1,4 @@
+body { margin: 0; padding: 0; background: #f7f7f7; }
+input, select { display:block; width:100%; padding:8px; margin:6px 0 12px 0; box-sizing:border-box }
+button { padding:8px 12px }
+label { font-weight:600; display:block }
