@@ -10,8 +10,13 @@ import java.util.Optional;
 
 @Service
 public class UserService {
-    private final InMemoryUserRepository repo = new InMemoryUserRepository();
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    private final InMemoryUserRepository repo;
+    private final BCryptPasswordEncoder encoder;
+
+    public UserService(InMemoryUserRepository repo, BCryptPasswordEncoder encoder) {
+        this.repo = repo;
+        this.encoder = encoder;
+    }
 
     public Optional<User> register(RegisterRequest req) {
         if (req.getEmail() == null || req.getPassword() == null) return Optional.empty();
