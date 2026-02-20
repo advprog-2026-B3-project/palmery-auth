@@ -1,4 +1,9 @@
-body { margin: 0; padding: 0; background: #f7f7f7; }
+body { margin: 0; padding: 0; background: #f7f7f7; font-family: Arial, sans-serif }
 input, select { display:block; width:100%; padding:8px; margin:6px 0 12px 0; box-sizing:border-box }
 button { padding:8px 12px }
 label { font-weight:600; display:block }
+
+/* Center layout */
+.page { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+.card { width:100%; max-width:480px; background:white; padding:24px; box-shadow:0 6px 18px rgba(0,0,0,0.08); border-radius:8px }
+.card h1, .card h2 { margin-top:0 }
