@@ -32,9 +32,8 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     annotationProcessor("org.projectlombok:lombok")
-    testImplementation("org.springframework.boot:spring-boot-starter-thymeleaf-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.mockito:mockito-inline:5.2.0")
 }
 
 tasks.withType<Test> {
