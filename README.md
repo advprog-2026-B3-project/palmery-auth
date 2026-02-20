@@ -23,6 +23,7 @@ Main endpoints:
 - `GET /api/debug/events`
 
 Copy `backend/.env.sample` to `.env` (or export env vars in your shell).
+Backend database uses `POSTGRES_URL`, `POSTGRES_USER`, and `POSTGRES_PASSWORD`.
 
 ## Frontend
 
@@ -38,7 +39,7 @@ Open `http://localhost:3000/debug` to validate frontend -> backend -> database i
 
 ## Docker
 
-Build and run both services:
+Build and run all services (frontend, backend, postgres):
 
 ```bash
 docker compose up --build
@@ -47,6 +48,7 @@ docker compose up --build
 Services:
 - Frontend: `http://localhost:3000`
 - Backend: `http://localhost:8080`
+- Postgres: `localhost:5432`
 
 If needed, override compose env values via shell env vars before running `docker compose up`.
 
@@ -62,8 +64,8 @@ It runs on every push to every branch and performs:
 
 You need to configure in GitHub repository settings:
 - Secret: `SONAR_TOKEN` (from SonarCloud account token)
-- Variable: `SONAR_PROJECT_KEY` (SonarCloud project key)
-- Variable: `SONAR_ORGANIZATION` (SonarCloud organization key)
+- Secret: `SONAR_PROJECT_KEY` (SonarCloud project key)
+- Secret: `SONAR_ORGANIZATION` (SonarCloud organization key)
 
 ## OAuth-style integration examples
 
