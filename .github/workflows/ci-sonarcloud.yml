@@ -56,11 +56,11 @@ jobs:
       - name: Validate SonarCloud Configuration
         run: |
           if [ -z "$SONAR_PROJECT_KEY" ]; then
-            echo "::error::Missing GitHub variable SONAR_PROJECT_KEY"
+            echo "::error::Missing GitHub secret SONAR_PROJECT_KEY"
             exit 1
           fi
           if [ -z "$SONAR_ORGANIZATION" ]; then
-            echo "::error::Missing GitHub variable SONAR_ORGANIZATION"
+            echo "::error::Missing GitHub secret SONAR_ORGANIZATION"
             exit 1
           fi
           if [ -z "$SONAR_TOKEN" ]; then

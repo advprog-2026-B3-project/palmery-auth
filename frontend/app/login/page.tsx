@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { introspectToken, loginForToken, TokenResponse } from "@/lib/auth-api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 type LoginState = {
   email: string;
@@ -30,7 +35,7 @@ export default function LoginPage() {
     try {
       const tokenResponse = await loginForToken(form.email, form.password);
       setToken(tokenResponse);
-      setStatus("Authenticated. Token issued.");
+      setStatus("Authenticated. Access token generated.");
     } catch (err) {
       setToken(null);
       setStatus(null);
@@ -43,7 +48,7 @@ export default function LoginPage() {
       return;
     }
 
-    setStatus("Introspecting token...");
+    setStatus("Running token introspection...");
     setError(null);
 
     try {
@@ -58,51 +63,90 @@ export default function LoginPage() {
   }
 
   return (
-    <main>
-      <h1>Login</h1>
-      <p className="muted">Exchanges credentials for a JWT token.</p>
-      <div className="card">
-        <form onSubmit={onSubmit}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={(event) => setForm({ ...form, email: event.target.value })}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={(event) => setForm({ ...form, password: event.target.value })}
-            required
-          />
-          <button type="submit">Login</button>
-        </form>
+    <main className="page page-stack">
+      <header className="page-header">
+        <h1 className="page-title">Login + Token</h1>
+        <p className="page-subtitle">Exchange user credentials for OAuth-style access token.</p>
+      </header>
 
-        {token && (
-          <>
-            <p className="status-ok">Token type: {token.token_type}</p>
-            <p className="muted">Expires in: {token.expires_in} seconds</p>
-            <pre>{token.access_token}</pre>
-            <button type="button" onClick={runIntrospection}>
-              Introspect Token
-            </button>
-          </>
-        )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Credential Login</CardTitle>
+          <CardDescription>Uses grant type password via auth backend token endpoint.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="form-grid" onSubmit={onSubmit}>
+            <div className="field">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="debug@example.com"
+                value={form.email}
+                onChange={(event) => setForm({ ...form, email: event.target.value })}
+                required
+              />
+            </div>
 
-        {introspection && (
-          <>
-            <h2>Introspection</h2>
-            <pre>{JSON.stringify(introspection, null, 2)}</pre>
-          </>
-        )}
+            <div className="field">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="********"
+                value={form.password}
+                onChange={(event) => setForm({ ...form, password: event.target.value })}
+                required
+              />
+            </div>
 
-        {status && <p className="status-ok">{status}</p>}
-        {error && <p className="status-err">{error}</p>}
-      </div>
-      <p>
-        <Link href="/">Back to home</Link>
+            <div className="action-row">
+              <Button type="submit">Login</Button>
+              <Button type="button" variant="secondary" onClick={() => setForm(initialState)}>
+                Reset
+              </Button>
+              <Button type="button" variant="outline" onClick={runIntrospection} disabled={!token?.access_token}>
+                Introspect Token
+              </Button>
+            </div>
+          </form>
+
+          {status ? (
+            <p>
+              <Badge variant="success">status</Badge> {status}
+            </p>
+          ) : null}
+
+          {error ? (
+            <p>
+              <Badge variant="danger">error</Badge> {error}
+            </p>
+          ) : null}
+
+          {token ? (
+            <div className="page-stack">
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <p className="stat-label">Token Type</p>
+                  <p className="stat-value">{token.token_type}</p>
+                </div>
+                <div className="stat-card">
+                  <p className="stat-label">Expires In</p>
+                  <p className="stat-value">{token.expires_in} sec</p>
+                </div>
+              </div>
+              <pre className="pre-block">{token.access_token}</pre>
+            </div>
+          ) : null}
+
+          {introspection ? <pre className="pre-block">{JSON.stringify(introspection, null, 2)}</pre> : null}
+        </CardContent>
+      </Card>
+
+      <p className="inline-note">
+        <Link className="page-link" href="/">
+          Back to home
+        </Link>
       </p>
     </main>
   );
