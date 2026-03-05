@@ -20,6 +20,7 @@ public class DatabaseSeeder {
     ) {
         return args -> {
             Role adminRole = ensureRole(roleRepository, "ADMIN_UTAMA", "Admin utama sistem");
+            ensureRole(roleRepository, "USER", "Pengguna umum");
             ensureRole(roleRepository, "BURUH", "Pekerja / buruh");
             ensureRole(roleRepository, "MANDOR", "Mandor lapangan");
             ensureRole(roleRepository, "SUPIR", "Supir");

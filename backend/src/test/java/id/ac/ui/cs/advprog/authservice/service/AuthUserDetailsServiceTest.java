@@ -1,7 +1,8 @@
 package id.ac.ui.cs.advprog.authservice.service;
 
-import id.ac.ui.cs.advprog.authservice.model.User;
-import id.ac.ui.cs.advprog.authservice.repo.InMemoryUserRepository;
+import id.ac.ui.cs.advprog.authservice.model.Role;
+import id.ac.ui.cs.advprog.authservice.model.UserAccount;
+import id.ac.ui.cs.advprog.authservice.repo.UserAccountRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.when;
 class AuthUserDetailsServiceTest {
 
     @Mock
-    private InMemoryUserRepository userRepository;
+    private UserAccountRepository userRepository;
 
     private AuthUserDetailsService authUserDetailsService;
 
@@ -34,8 +35,16 @@ class AuthUserDetailsServiceTest {
     @Test
     @DisplayName("Load user by username returns user details")
     void testLoadUserByUsernameSuccess() {
-        User user = new User("Andi", "andi@test.com", "hashed", "admin");
-        when(userRepository.findByEmail("andi@test.com")).thenReturn(Optional.of(user));
+        Role role = new Role("ADMIN", "Admin");
+        UserAccount account = new UserAccount(
+                "andi",
+                "Andi",
+                "andi@test.com",
+                "hashed",
+                role
+        );
+
+        when(userRepository.findByEmail("andi@test.com")).thenReturn(Optional.of(account));
 
         UserDetails userDetails = authUserDetailsService.loadUserByUsername("andi@test.com");
 
@@ -55,3 +64,4 @@ class AuthUserDetailsServiceTest {
         );
     }
 }
+
