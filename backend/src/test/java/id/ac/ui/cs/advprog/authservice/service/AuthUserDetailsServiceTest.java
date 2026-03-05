@@ -37,7 +37,6 @@ class AuthUserDetailsServiceTest {
     void testLoadUserByUsernameSuccess() {
         Role role = new Role("ADMIN", "Admin");
         UserAccount account = new UserAccount(
-                "andi",
                 "Andi",
                 "andi@test.com",
                 "hashed",

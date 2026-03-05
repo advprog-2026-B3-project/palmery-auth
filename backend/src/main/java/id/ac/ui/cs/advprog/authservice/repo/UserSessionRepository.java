@@ -8,6 +8,6 @@ import java.util.UUID;
 
 public interface UserSessionRepository extends JpaRepository<UserSession, UUID> {
 
-    Optional<UserSession> findBySessionToken(String sessionToken);
+    Optional<UserSession> findByRefreshToken(String refreshToken);
 }
 

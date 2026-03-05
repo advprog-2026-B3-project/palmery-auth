@@ -19,14 +19,12 @@ public class DatabaseSeeder {
             PasswordEncoder passwordEncoder
     ) {
         return args -> {
-            Role adminRole = ensureRole(roleRepository, "ADMIN_UTAMA", "Admin utama sistem");
-            ensureRole(roleRepository, "USER", "Pengguna umum");
-            ensureRole(roleRepository, "BURUH", "Pekerja / buruh");
-            ensureRole(roleRepository, "MANDOR", "Mandor lapangan");
-            ensureRole(roleRepository, "SUPIR", "Supir");
+            Role adminRole = ensureRole(roleRepository, "ADMIN", "Admin utama sistem");
+            ensureRole(roleRepository, "SUPERVISOR", "Mandor / supervisor lapangan");
+            ensureRole(roleRepository, "WORKER", "Pekerja / buruh");
+            ensureRole(roleRepository, "DRIVER", "Supir");
 
             String adminEmail = "admin@palmery.local";
-            String adminUsername = "admin";
 
             if (userAccountRepository.existsByEmail(adminEmail)) {
                 return;
@@ -35,7 +33,6 @@ public class DatabaseSeeder {
             String encodedPassword = passwordEncoder.encode("admin123");
 
             UserAccount admin = new UserAccount(
-                    adminUsername,
                     "Admin Utama",
                     adminEmail,
                     encodedPassword,

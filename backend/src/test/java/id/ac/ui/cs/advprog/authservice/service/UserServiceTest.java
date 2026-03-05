@@ -49,22 +49,22 @@ class UserServiceTest {
         req.setName("Andi");
         req.setEmail("andi@test.com");
         req.setPassword("password123");
-        req.setRole("USER");
+        req.setRole("WORKER");
 
-        Role role = new Role("USER", "Pengguna umum");
+        Role role = new Role("WORKER", "Pekerja / buruh");
 
         when(mockAccountRepo.existsByEmail("andi@test.com")).thenReturn(false);
-        when(mockRoleRepo.findByName("USER")).thenReturn(Optional.of(role));
+        when(mockRoleRepo.findByName("WORKER")).thenReturn(Optional.of(role));
         when(mockEncoder.encode("password123")).thenReturn("hashed_password");
 
         Optional<User> result = userService.register(req);
 
         assertTrue(result.isPresent());
         assertEquals("andi@test.com", result.get().getEmail());
-        assertEquals("USER", result.get().getRole());
+        assertEquals("WORKER", result.get().getRole());
 
         verify(mockAccountRepo).existsByEmail("andi@test.com");
-        verify(mockRoleRepo).findByName("USER");
+        verify(mockRoleRepo).findByName("WORKER");
         verify(mockEncoder).encode("password123");
 
         ArgumentCaptor<UserAccount> accountCaptor = ArgumentCaptor.forClass(UserAccount.class);
@@ -95,9 +95,8 @@ class UserServiceTest {
     @Test
     @DisplayName("Find by email returns user when present")
     void testFindByEmail() {
-        Role role = new Role("USER", "Pengguna umum");
+        Role role = new Role("WORKER", "Pekerja / buruh");
         UserAccount account = new UserAccount(
-                "andi@test.com",
                 "Andi",
                 "andi@test.com",
                 "hashed",

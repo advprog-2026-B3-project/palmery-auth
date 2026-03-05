@@ -21,27 +21,24 @@ public class UserAccount {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", nullable = false, updatable = false)
+    @Column(name = "id", nullable = false, updatable = false, length = 36)
     private UUID id;
-
-    @Column(name = "username", nullable = false, unique = true, length = 100)
-    private String username;
-
-    @Column(name = "name", nullable = false, length = 150)
-    private String name;
-
-    @Column(name = "email", nullable = false, unique = true, length = 150)
-    private String email;
-
-    @Column(name = "password_hash", nullable = false, length = 255)
-    private String passwordHash;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
-    @Column(name = "mandor_certification_number", length = 100)
-    private String mandorCertificationNumber;
+    @Column(name = "name", nullable = false, length = 255)
+    private String name;
+
+    @Column(name = "email", nullable = false, unique = true, length = 255)
+    private String email;
+
+    @Column(name = "password_hash", nullable = false, length = 255)
+    private String passwordHash;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -55,12 +52,10 @@ public class UserAccount {
         // For JPA
     }
 
-    public UserAccount(String username,
-                       String name,
+    public UserAccount(String name,
                        String email,
                        String passwordHash,
                        Role role) {
-        this.username = username;
         this.name = name;
         this.email = email;
         this.passwordHash = passwordHash;
@@ -69,14 +64,6 @@ public class UserAccount {
 
     public UUID getId() {
         return id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 
     public String getName() {
@@ -110,13 +97,13 @@ public class UserAccount {
     public void setRole(Role role) {
         this.role = role;
     }
-
-    public String getMandorCertificationNumber() {
-        return mandorCertificationNumber;
+    
+    public boolean isActive() {
+        return active;
     }
 
-    public void setMandorCertificationNumber(String mandorCertificationNumber) {
-        this.mandorCertificationNumber = mandorCertificationNumber;
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public Instant getCreatedAt() {

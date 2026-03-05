@@ -44,10 +44,7 @@ public class UserService {
 
         String hash = encoder.encode(req.getPassword());
 
-        String username = email; // sementara gunakan email sebagai username unik
-
         UserAccount account = new UserAccount(
-                username,
                 req.getName(),
                 email,
                 hash,
@@ -90,7 +87,8 @@ public class UserService {
 
     private String resolveRoleName(String requestedRole) {
         if (requestedRole == null || requestedRole.isBlank()) {
-            return "USER";
+            // default role untuk registrasi umum adalah WORKER (buruh)
+            return "WORKER";
         }
         return requestedRole.trim().toUpperCase(Locale.ROOT);
     }
