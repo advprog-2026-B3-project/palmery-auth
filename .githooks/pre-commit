@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+printf 'pre-commit: building backend...\n'
+(
+  cd backend
+  ./gradlew build
+)
+
+printf 'pre-commit: building frontend...\n'
+(
+  cd frontend
+  pnpm build
+)
