@@ -13,6 +13,8 @@ import java.util.Map;
 @Service
 public class IntegrationDebugService {
 
+    private static final String DEFAULT_EVENT_SOURCE = "frontend-debug";
+
     private final IntegrationEventRepository integrationEventRepository;
     private final JdbcTemplate jdbcTemplate;
 
@@ -42,14 +44,15 @@ public class IntegrationDebugService {
     }
 
     public IntegrationEvent createEvent(String source) {
-        String normalizedSource = source == null || source.isBlank() ? "frontend-debug" : source;
+        String normalizedSource = source == null || source.isBlank() ? DEFAULT_EVENT_SOURCE : source;
         return integrationEventRepository.save(new IntegrationEvent(normalizedSource));
     }
 
     public List<IntegrationEvent> latestEvents(int limit) {
+        int normalizedLimit = Math.max(limit, 0);
         return integrationEventRepository.findAll().stream()
                 .sorted(Comparator.comparing(IntegrationEvent::getCreatedAt).reversed())
-                .limit(limit)
+                .limit(normalizedLimit)
                 .toList();
     }
 }

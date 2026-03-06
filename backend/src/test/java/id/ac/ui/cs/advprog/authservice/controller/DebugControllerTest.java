@@ -60,6 +60,19 @@ class DebugControllerTest {
     }
 
     @Test
+    @DisplayName("Create event handles missing request body")
+    void testCreateEventWithoutBody() {
+        IntegrationEvent event = new IntegrationEvent("frontend-debug");
+        when(integrationDebugService.createEvent(null)).thenReturn(event);
+
+        ResponseEntity<Map<String, Object>> response = debugController.createEvent(null);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("frontend-debug", response.getBody().get("source"));
+    }
+
+    @Test
     @DisplayName("List events returns latest event payload")
     void testLatestEvents() {
         when(integrationDebugService.latestEvents(10)).thenReturn(List.of(new IntegrationEvent("frontend-test")));

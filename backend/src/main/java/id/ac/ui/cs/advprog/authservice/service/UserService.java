@@ -6,10 +6,13 @@ import id.ac.ui.cs.advprog.authservice.repo.InMemoryUserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
 public class UserService {
+    private static final String DEFAULT_ROLE = "user";
+
     private final InMemoryUserRepository repo;
     private final PasswordEncoder encoder;
 
@@ -19,26 +22,31 @@ public class UserService {
     }
 
     public Optional<User> register(RegisterRequest req) {
-        if (req.getEmail() == null || req.getPassword() == null) {
+        if (req == null || !hasText(req.getEmail()) || !hasText(req.getPassword())) {
             return Optional.empty();
         }
 
-        String email = req.getEmail().toLowerCase();
+        String email = req.getEmail().toLowerCase(Locale.ROOT);
         if (repo.existsByEmail(email)) {
             return Optional.empty();
         }
 
         String hash = encoder.encode(req.getPassword());
-        User user = new User(req.getName(), email, hash, req.getRole() == null ? "user" : req.getRole());
+        String role = hasText(req.getRole()) ? req.getRole() : DEFAULT_ROLE;
+        User user = new User(req.getName(), email, hash, role);
         repo.save(user);
         return Optional.of(user);
     }
 
     public Optional<User> findByEmail(String email) {
-        if (email == null) {
+        if (!hasText(email)) {
             return Optional.empty();
         }
 
-        return repo.findByEmail(email.toLowerCase());
+        return repo.findByEmail(email.toLowerCase(Locale.ROOT));
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

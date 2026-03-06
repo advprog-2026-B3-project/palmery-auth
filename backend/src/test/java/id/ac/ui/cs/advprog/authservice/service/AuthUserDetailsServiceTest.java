@@ -37,7 +37,7 @@ class AuthUserDetailsServiceTest {
         User user = new User("Andi", "andi@test.com", "hashed", "admin");
         when(userRepository.findByEmail("andi@test.com")).thenReturn(Optional.of(user));
 
-        UserDetails userDetails = authUserDetailsService.loadUserByUsername("andi@test.com");
+        UserDetails userDetails = authUserDetailsService.loadUserByUsername("ANDI@TEST.COM");
 
         assertEquals("andi@test.com", userDetails.getUsername());
         assertEquals("hashed", userDetails.getPassword());
@@ -52,6 +52,15 @@ class AuthUserDetailsServiceTest {
         assertThrows(
                 UsernameNotFoundException.class,
                 () -> authUserDetailsService.loadUserByUsername("missing@test.com")
+        );
+    }
+
+    @Test
+    @DisplayName("Load user throws when username is blank")
+    void testLoadUserByUsernameBlank() {
+        assertThrows(
+                UsernameNotFoundException.class,
+                () -> authUserDetailsService.loadUserByUsername(" ")
         );
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class AuthUserDetailsService implements UserDetailsService {
@@ -21,11 +22,16 @@ public class AuthUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userRepository.findByEmail(username.toLowerCase())
+        if (username == null || username.isBlank()) {
+            throw new UsernameNotFoundException("User not found");
+        }
+
+        String normalizedUsername = username.toLowerCase(Locale.ROOT);
+        return userRepository.findByEmail(normalizedUsername)
                 .map(user -> new User(
                         user.getEmail(),
                         user.getPasswordHash(),
-                        List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase()))
+                        List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase(Locale.ROOT)))
                 ))
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }

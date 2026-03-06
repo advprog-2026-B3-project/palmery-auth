@@ -74,6 +74,14 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("Register returns 400 when body is missing")
+    void testRegisterMissingBody() {
+        ResponseEntity<Map<String, Object>> response = authController.register(null);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
     @DisplayName("Password grant returns bearer token")
     void testPasswordGrantSuccess() {
         TokenRequest request = new TokenRequest();
@@ -98,6 +106,14 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("Token endpoint returns 400 when body is missing")
+    void testTokenMissingBody() {
+        ResponseEntity<?> response = authController.token(null);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
     @DisplayName("Password grant rejects invalid credentials")
     void testPasswordGrantInvalidCredentials() {
         TokenRequest request = new TokenRequest();
@@ -110,6 +126,18 @@ class AuthControllerTest {
         ResponseEntity<?> response = authController.token(request);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("Password grant requires email and password")
+    void testPasswordGrantRequiresCredentials() {
+        TokenRequest request = new TokenRequest();
+        request.setGrant_type("password");
+        request.setEmail("andi@test.com");
+
+        ResponseEntity<?> response = authController.token(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
@@ -129,6 +157,55 @@ class AuthControllerTest {
         assertTrue(response.getBody() instanceof TokenResponse);
         TokenResponse tokenResponse = (TokenResponse) response.getBody();
         assertEquals("jwt-service-token", tokenResponse.getAccess_token());
+    }
+
+    @Test
+    @DisplayName("Client credentials grant rejects invalid client")
+    void testClientCredentialsGrantInvalidClient() {
+        TokenRequest request = new TokenRequest();
+        request.setGrant_type("client_credentials");
+        request.setClient_id("service-a");
+        request.setClient_secret("wrong-secret");
+
+        ResponseEntity<?> response = authController.token(request);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("Client credentials grant requires credentials")
+    void testClientCredentialsGrantRequiresCredentials() {
+        TokenRequest request = new TokenRequest();
+        request.setGrant_type("client_credentials");
+        request.setClient_id("service-a");
+
+        ResponseEntity<?> response = authController.token(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("Unsupported grant type returns bad request")
+    void testUnsupportedGrantType() {
+        TokenRequest request = new TokenRequest();
+        request.setGrant_type("authorization_code");
+
+        ResponseEntity<?> response = authController.token(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("Info endpoint returns auth metadata")
+    void testInfoEndpoint() {
+        ResponseEntity<Map<String, Object>> response = authController.info();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().containsKey("register"));
+        assertTrue(response.getBody().containsKey("token"));
+        assertTrue(response.getBody().containsKey("introspect"));
+        assertTrue(response.getBody().containsKey("issuer"));
     }
 
     @Test
@@ -153,5 +230,13 @@ class AuthControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(Map.of("active", true, "sub", "123"), response.getBody());
+    }
+
+    @Test
+    @DisplayName("Introspect returns 400 when body is missing")
+    void testIntrospectMissingBody() {
+        ResponseEntity<?> response = authController.introspect(null);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 }
