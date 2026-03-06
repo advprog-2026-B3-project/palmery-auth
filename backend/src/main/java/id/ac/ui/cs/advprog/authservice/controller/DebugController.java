@@ -19,6 +19,8 @@ import java.util.Map;
 @RequestMapping("/api/debug")
 public class DebugController {
 
+    private static final int DEFAULT_EVENTS_LIMIT = 10;
+
     private final IntegrationDebugService integrationDebugService;
 
     public DebugController(IntegrationDebugService integrationDebugService) {
@@ -35,26 +37,23 @@ public class DebugController {
         String source = request == null ? null : request.getSource();
         IntegrationEvent event = integrationDebugService.createEvent(source);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("id", event.getId());
-        response.put("source", event.getSource());
-        response.put("created_at", event.getCreatedAt());
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(toEventResponse(event));
     }
 
     @GetMapping("/events")
     public ResponseEntity<List<Map<String, Object>>> latestEvents() {
-        List<Map<String, Object>> response = integrationDebugService.latestEvents(10).stream()
-                .map(event -> {
-                    Map<String, Object> entry = new HashMap<>();
-                    entry.put("id", event.getId());
-                    entry.put("source", event.getSource());
-                    entry.put("created_at", event.getCreatedAt());
-                    return entry;
-                })
+        List<Map<String, Object>> response = integrationDebugService.latestEvents(DEFAULT_EVENTS_LIMIT).stream()
+                .map(this::toEventResponse)
                 .toList();
 
         return ResponseEntity.ok(response);
+    }
+
+    private Map<String, Object> toEventResponse(IntegrationEvent event) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", event.getId());
+        response.put("source", event.getSource());
+        response.put("created_at", event.getCreatedAt());
+        return response;
     }
 }

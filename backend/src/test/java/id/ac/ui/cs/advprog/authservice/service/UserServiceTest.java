@@ -83,4 +83,40 @@ class UserServiceTest {
         assertTrue(result.isPresent());
         assertEquals("andi@test.com", result.get().getEmail());
     }
+
+    @Test
+    @DisplayName("Register with missing body returns empty")
+    void testRegisterMissingBody() {
+        Optional<User> result = userService.register(null);
+
+        assertTrue(result.isEmpty());
+        verifyNoInteractions(mockRepo, mockEncoder);
+    }
+
+    @Test
+    @DisplayName("Register defaults role when blank")
+    void testRegisterBlankRoleDefaultsToUser() {
+        RegisterRequest req = new RegisterRequest();
+        req.setName("Citra");
+        req.setEmail("citra@test.com");
+        req.setPassword("password789");
+        req.setRole("   ");
+
+        when(mockRepo.existsByEmail("citra@test.com")).thenReturn(false);
+        when(mockEncoder.encode("password789")).thenReturn("hashed_citra");
+
+        Optional<User> result = userService.register(req);
+
+        assertTrue(result.isPresent());
+        assertEquals("user", result.get().getRole());
+    }
+
+    @Test
+    @DisplayName("Find by email returns empty for blank input")
+    void testFindByEmailBlankInput() {
+        Optional<User> result = userService.findByEmail(" ");
+
+        assertTrue(result.isEmpty());
+        verify(mockRepo, never()).findByEmail(any());
+    }
 }

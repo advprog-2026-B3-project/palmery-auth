@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -28,7 +29,12 @@ import java.util.Optional;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private static final String PASSWORD_GRANT_TYPE = "password";
+    private static final String CLIENT_CREDENTIALS_GRANT_TYPE = "client_credentials";
+    private static final String BEARER_TOKEN_TYPE = "Bearer";
+    private static final String INVALID_CREDENTIALS_MESSAGE = "invalid credentials";
     private static final String DEFAULT_OAUTH_SCOPE = "openid profile email";
+    private static final String DEFAULT_SERVICE_SCOPE = "service.read service.write";
 
     private final UserService userService;
     private final JwtTokenService jwtTokenService;
@@ -49,7 +55,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> register(@RequestBody RegisterRequest req) {
-        if (req.getEmail() == null || req.getPassword() == null) {
+        if (req == null || !hasText(req.getEmail()) || !hasText(req.getPassword())) {
             return ResponseEntity.badRequest().body(Map.of("message", "email and password required"));
         }
 
@@ -68,13 +74,15 @@ public class AuthController {
 
     @PostMapping("/token")
     public ResponseEntity<?> token(@RequestBody TokenRequest req) {
-        String grantType = req.getGrant_type() == null || req.getGrant_type().isBlank()
-                ? "password"
-                : req.getGrant_type().toLowerCase();
+        if (req == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "request body required"));
+        }
+
+        String grantType = normalizeGrantType(req.getGrant_type());
 
         return switch (grantType) {
-            case "password" -> issueTokenByPassword(req);
-            case "client_credentials" -> issueTokenByClientCredentials(req);
+            case PASSWORD_GRANT_TYPE -> issueTokenByPassword(req);
+            case CLIENT_CREDENTIALS_GRANT_TYPE -> issueTokenByClientCredentials(req);
             default -> ResponseEntity.badRequest().body(Map.of(
                     "error", "unsupported_grant_type",
                     "message", "Supported grant_type: password, client_credentials"
@@ -84,7 +92,7 @@ public class AuthController {
 
     @PostMapping("/introspect")
     public ResponseEntity<?> introspect(@RequestBody TokenIntrospectionRequest req) {
-        if (req.getToken() == null || req.getToken().isBlank()) {
+        if (req == null || !hasText(req.getToken())) {
             return ResponseEntity.badRequest().body(Map.of("message", "token required"));
         }
 
@@ -107,21 +115,21 @@ public class AuthController {
     }
 
     private ResponseEntity<?> issueTokenByPassword(TokenRequest req) {
-        if (req.getEmail() == null || req.getPassword() == null) {
+        if (!hasText(req.getEmail()) || !hasText(req.getPassword())) {
             return ResponseEntity.badRequest().body(Map.of("message", "email and password required for grant_type=password"));
         }
 
-        String email = req.getEmail().toLowerCase();
+        String email = req.getEmail().toLowerCase(Locale.ROOT);
 
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, req.getPassword()));
         } catch (AuthenticationException ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "invalid credentials"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", INVALID_CREDENTIALS_MESSAGE));
         }
 
         Optional<User> authenticatedUser = userService.findByEmail(email);
         if (authenticatedUser.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "invalid credentials"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", INVALID_CREDENTIALS_MESSAGE));
         }
 
         String scope = req.getScope() == null || req.getScope().isBlank() ? DEFAULT_OAUTH_SCOPE : req.getScope();
@@ -129,14 +137,14 @@ public class AuthController {
 
         return ResponseEntity.ok(new TokenResponse(
                 accessToken,
-                "Bearer",
+                BEARER_TOKEN_TYPE,
                 authProperties.getAccessTokenTtlSeconds(),
                 scope
         ));
     }
 
     private ResponseEntity<?> issueTokenByClientCredentials(TokenRequest req) {
-        if (req.getClient_id() == null || req.getClient_secret() == null) {
+        if (!hasText(req.getClient_id()) || !hasText(req.getClient_secret())) {
             return ResponseEntity.badRequest().body(Map.of("message", "client_id and client_secret required for grant_type=client_credentials"));
         }
 
@@ -147,14 +155,25 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "invalid client credentials"));
         }
 
-        String scope = req.getScope() == null || req.getScope().isBlank() ? "service.read service.write" : req.getScope();
+        String scope = req.getScope() == null || req.getScope().isBlank() ? DEFAULT_SERVICE_SCOPE : req.getScope();
         String accessToken = jwtTokenService.generateServiceToken(req.getClient_id(), scope);
 
         return ResponseEntity.ok(new TokenResponse(
                 accessToken,
-                "Bearer",
+                BEARER_TOKEN_TYPE,
                 authProperties.getAccessTokenTtlSeconds(),
                 scope
         ));
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private static String normalizeGrantType(String grantType) {
+        if (!hasText(grantType)) {
+            return PASSWORD_GRANT_TYPE;
+        }
+        return grantType.toLowerCase(Locale.ROOT);
     }
 }

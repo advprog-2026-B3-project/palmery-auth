@@ -61,4 +61,41 @@ class JwtTokenServiceTest {
 
         assertEquals(Boolean.FALSE, response.get("active"));
     }
+
+    @Test
+    @DisplayName("Parse claims returns empty for blank token")
+    void testParseClaimsBlankToken() {
+        JwtTokenService tokenService = createService();
+
+        assertTrue(tokenService.parseClaims(" ").isEmpty());
+    }
+
+    @Test
+    @DisplayName("Generate access token uses default scope when blank")
+    void testGenerateAccessTokenDefaultScope() {
+        JwtTokenService tokenService = createService();
+        User user = new User("Andi", "andi@test.com", "hash", "user");
+
+        String token = tokenService.generateAccessToken(user, " ");
+        Optional<Claims> claims = tokenService.parseClaims(token);
+
+        assertTrue(claims.isPresent());
+        assertEquals("openid profile email", claims.get().get("scope"));
+    }
+
+    @Test
+    @DisplayName("Introspect valid token returns active payload")
+    void testIntrospectValidToken() {
+        JwtTokenService tokenService = createService();
+        User user = new User("Andi", "andi@test.com", "hash", "user");
+        String token = tokenService.generateAccessToken(user, "openid profile email");
+
+        Map<String, Object> response = tokenService.introspect(token);
+
+        assertEquals(Boolean.TRUE, response.get("active"));
+        assertEquals(user.getId(), response.get("sub"));
+        assertEquals("andi@test.com", response.get("email"));
+        assertEquals("user", response.get("role"));
+        assertNotNull(response.get("exp"));
+    }
 }

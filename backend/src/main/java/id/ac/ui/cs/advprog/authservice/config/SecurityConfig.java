@@ -1,8 +1,7 @@
 package id.ac.ui.cs.advprog.authservice.config;
 
 import id.ac.ui.cs.advprog.authservice.service.AuthUserDetailsService;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
+import id.ac.ui.cs.advprog.authservice.security.JwtSigningKeyFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,7 +22,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Configuration
@@ -88,28 +86,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder(AuthProperties authProperties) {
-        SecretKey secretKey = buildSigningKey(authProperties.getJwtSecret());
+        SecretKey secretKey = JwtSigningKeyFactory.fromSecret(authProperties.getJwtSecret());
         return NimbusJwtDecoder.withSecretKey(secretKey).build();
-    }
-
-    private SecretKey buildSigningKey(String configuredSecret) {
-        try {
-            byte[] decodedKey = Decoders.BASE64.decode(configuredSecret);
-            if (decodedKey.length >= 32) {
-                return Keys.hmacShaKeyFor(decodedKey);
-            }
-        } catch (RuntimeException ignored) {
-            // Fall back to raw-string key handling.
-        }
-
-        byte[] rawKey = configuredSecret.getBytes(StandardCharsets.UTF_8);
-        if (rawKey.length < 32) {
-            try {
-                rawKey = java.security.MessageDigest.getInstance("SHA-256").digest(rawKey);
-            } catch (java.security.NoSuchAlgorithmException ex) {
-                throw new IllegalStateException("SHA-256 unavailable", ex);
-            }
-        }
-        return Keys.hmacShaKeyFor(rawKey);
     }
 }

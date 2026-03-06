@@ -10,6 +10,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -52,5 +54,38 @@ class IntegrationDebugServiceTest {
         IntegrationEvent result = integrationDebugService.createEvent("");
 
         assertEquals("frontend-debug", result.getSource());
+    }
+
+    @Test
+    @DisplayName("Latest events returns sorted events with limit")
+    void testLatestEventsSortedAndLimited() throws Exception {
+        IntegrationEvent older = new IntegrationEvent("older");
+        setCreatedAt(older, Instant.parse("2024-01-01T00:00:00Z"));
+
+        IntegrationEvent newer = new IntegrationEvent("newer");
+        setCreatedAt(newer, Instant.parse("2024-01-02T00:00:00Z"));
+
+        when(integrationEventRepository.findAll()).thenReturn(List.of(older, newer));
+
+        List<IntegrationEvent> result = integrationDebugService.latestEvents(1);
+
+        assertEquals(1, result.size());
+        assertEquals("newer", result.getFirst().getSource());
+    }
+
+    @Test
+    @DisplayName("Latest events with negative limit returns empty list")
+    void testLatestEventsNegativeLimit() {
+        when(integrationEventRepository.findAll()).thenReturn(List.of(new IntegrationEvent("sample")));
+
+        List<IntegrationEvent> result = integrationDebugService.latestEvents(-1);
+
+        assertEquals(0, result.size());
+    }
+
+    private void setCreatedAt(IntegrationEvent event, Instant value) throws Exception {
+        java.lang.reflect.Field createdAtField = IntegrationEvent.class.getDeclaredField("createdAt");
+        createdAtField.setAccessible(true);
+        createdAtField.set(event, value);
     }
 }
