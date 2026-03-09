@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Footer from "@/components/ui/footer";
+import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
   title: "Palmery Auth",
@@ -16,7 +17,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
 
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
 
         <Footer />
 
