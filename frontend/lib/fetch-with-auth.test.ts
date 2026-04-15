@@ -3,6 +3,12 @@ import { fetchWithAuth } from "./fetch-with-auth";
 import * as authStorage from "./auth-storage";
 import * as authService from "./auth-service";
 
+// Mock window.location to avoid "Not implemented: navigation" error in JSDOM
+const originalLocation = window.location;
+// @ts-ignore
+delete window.location;
+window.location = { ...originalLocation, href: "" };
+
 vi.mock("./auth-storage", () => ({
   getToken: vi.fn(),
   clearToken: vi.fn(),
@@ -10,11 +16,13 @@ vi.mock("./auth-storage", () => ({
 
 vi.mock("./auth-service", () => ({
   decodeJwt: vi.fn(),
+  redirectToLogin: vi.fn(),
 }));
 
 describe("fetch-with-auth", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.location.href = "";
     // @ts-ignore
     global.fetch = vi.fn();
   });

@@ -1,5 +1,5 @@
-import { render, act, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, act, screen, cleanup } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { AuthProvider, useAuth } from "./AuthContext";
 import * as authService from "@/lib/auth-service";
 import React from "react";
@@ -29,6 +29,10 @@ describe("AuthContext", () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    cleanup();
+  });
+
   it("should initialize with token from service", async () => {
     vi.mocked(authService.getAuthToken).mockReturnValue("initial-token");
     vi.mocked(authService.getAuthUser).mockReturnValue({ email: "t@t.com", isExpired: false });
@@ -45,7 +49,7 @@ describe("AuthContext", () => {
 
   it("should update token when setToken is called", async () => {
     vi.mocked(authService.getAuthToken).mockReturnValue(null);
-    vi.mocked(authService.getAuthUser).mockReturnValue(null);
+    vi.mocked(authService.getAuthUser).mockReturnValue({ email: "t@t.com", isExpired: false });
 
     render(
       <AuthProvider>

@@ -102,6 +102,13 @@ export function isAuthenticated(): boolean {
   return Boolean(token && !isTokenExpired(token));
 }
 
+export function redirectToLogin(error?: string): void {
+  if (typeof window !== "undefined") {
+    const query = error ? `?error=${error}` : "";
+    window.location.href = `/login${query}`;
+  }
+}
+
 export async function authFetch(input: RequestInfo | URL, init: RequestInit = {}) {
   const token = getAuthToken();
   const headers = new Headers(init.headers || {});
@@ -109,9 +116,7 @@ export async function authFetch(input: RequestInfo | URL, init: RequestInit = {}
   if (token) {
     if (isTokenExpired(token)) {
       clearAuthToken();
-      if (typeof window !== "undefined") {
-        window.location.href = "/login?error=session_expired";
-      }
+      redirectToLogin("session_expired");
       throw new Error("Token expired");
     }
     headers.set("Authorization", `Bearer ${token}`);
@@ -121,9 +126,7 @@ export async function authFetch(input: RequestInfo | URL, init: RequestInit = {}
 
   if (response.status === 401) {
     clearAuthToken();
-    if (typeof window !== "undefined") {
-      window.location.href = "/login?error=session_unauthorized";
-    }
+    redirectToLogin("session_unauthorized");
   }
 
   return response;

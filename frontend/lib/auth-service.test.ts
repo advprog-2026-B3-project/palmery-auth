@@ -9,6 +9,12 @@ import {
 } from "./auth-service";
 import * as authStorage from "./auth-storage";
 
+// Mock window.location to avoid "Not implemented: navigation" error in JSDOM
+const originalLocation = window.location;
+// @ts-ignore
+delete window.location;
+window.location = { ...originalLocation, href: "" };
+
 vi.mock("./auth-storage", () => ({
   getToken: vi.fn(),
   setToken: vi.fn(),
@@ -31,6 +37,7 @@ describe("auth-service", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    window.location.href = "";
     // @ts-ignore
     global.fetch = vi.fn();
   });
