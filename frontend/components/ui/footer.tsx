@@ -3,8 +3,11 @@ export default function Footer() {
   return (
     <footer className="footer">
       <div className="footer-left">
-        <img src="/FYNE-11-1.png" alt="Palmery logo" className="footer-logo" />
-        <h2>Palmery</h2>
+        <img src="/palmery.svg" alt="Palmery logo" className="footer-logo" />
+        <div>
+          <h2>Palmery</h2>
+          <p className="footer-tagline">Smart palm farm access</p>
+        </div>
       </div>
 
       <div className="footer-divider"></div>

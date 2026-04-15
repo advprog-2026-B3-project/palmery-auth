@@ -2,9 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { fetchProtectedPing, logout, getStoredToken } from "@/lib/auth-api";
+import { fetchProtectedPing } from "@/lib/auth-api";
+import { useRequireAuth } from "@/lib/useRequireAuth";
+import { useAuth } from "@/lib/useAuth";
 
 export default function ProtectedTestPage() {
+  const { token, initialized } = useRequireAuth("/login");
+  const { logout } = useAuth();
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,6 +29,10 @@ export default function ProtectedTestPage() {
     setError(null);
   }
 
+  if (!initialized) {
+    return <p>Loading auth state...</p>;
+  }
+
   return (
     <main className="page page-stack">
       <header className="page-header">
@@ -43,7 +51,7 @@ export default function ProtectedTestPage() {
         </button>
       </div>
 
-      <p className="inline-note">Token tersimpan: {getStoredToken() ? "YA" : "TIDAK"}</p>
+      <p className="inline-note">Token tersimpan: {token ? "YA" : "TIDAK"}</p>
 
       {result ? (
         <pre className="pre-block">{result}</pre>

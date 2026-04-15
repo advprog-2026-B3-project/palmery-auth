@@ -1,6 +1,6 @@
 const API_BASE = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL ?? "http://localhost:8080";
 import { setToken as persistToken, clearToken as removeToken, getToken } from "@/lib/auth-storage";
-import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { authFetch } from "@/lib/auth-service";
 
 export type RegisterPayload = {
   name: string;
@@ -66,7 +66,7 @@ export async function introspectToken(token: string): Promise<Record<string, unk
 }
 
 export async function fetchIntegrationStatus(): Promise<Record<string, unknown>> {
-  const response = await fetchWithAuth(`${API_BASE}/api/debug/integration`, {
+  const response = await authFetch(`${API_BASE}/api/debug/integration`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -80,7 +80,7 @@ export async function fetchIntegrationStatus(): Promise<Record<string, unknown>>
 }
 
 export async function createDebugEvent(source = "frontend-debug"): Promise<Record<string, unknown>> {
-  const response = await fetchWithAuth(`${API_BASE}/api/debug/events`, {
+  const response = await authFetch(`${API_BASE}/api/debug/events`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ source }),
@@ -95,7 +95,7 @@ export async function createDebugEvent(source = "frontend-debug"): Promise<Recor
 }
 
 export async function fetchDebugEvents(): Promise<Record<string, unknown>[]> {
-  const response = await fetchWithAuth(`${API_BASE}/api/debug/events`, {
+  const response = await authFetch(`${API_BASE}/api/debug/events`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -117,7 +117,7 @@ export function getStoredToken(): string | null {
 }
 
 export async function fetchProtectedPing(): Promise<Record<string, unknown>> {
-  const response = await fetchWithAuth(`${API_BASE}/api/protected/ping`, {
+  const response = await authFetch(`${API_BASE}/api/protected/ping`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });

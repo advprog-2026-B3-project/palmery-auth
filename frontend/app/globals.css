@@ -258,6 +258,77 @@ a {
   text-decoration: none;
 }
 
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.summary-card {
+  padding: 1.35rem;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+}
+
+.page-card {
+  padding: 1.4rem;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.info-card {
+  padding: 1rem;
+  border-radius: 14px;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+}
+
+.inline-note {
+  color: var(--text-muted);
+}
+
+.page-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.page-link:hover {
+  text-decoration: underline;
+}
+
+.forbidden-card {
+  display: grid;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+@media (max-width: 900px) {
+  .summary-grid,
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .nav-tile:hover {
   border-color: var(--line-strong);
   background: #f4f4f5;
