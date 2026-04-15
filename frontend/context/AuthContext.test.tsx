@@ -1,4 +1,4 @@
-import { render, act, screen, cleanup } from "@testing-library/react";
+import { render, act, screen, cleanup, renderHook } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { AuthProvider, useAuth } from "./AuthContext";
 import * as authService from "@/lib/auth-service";
@@ -62,6 +62,46 @@ describe("AuthContext", () => {
     });
 
     expect(authService.saveAuthToken).toHaveBeenCalledWith("new-token");
+  });
+
+  it("should clear token when setToken(null) is called", async () => {
+    vi.mocked(authService.getAuthToken).mockReturnValue("initial-token");
+    vi.mocked(authService.getAuthUser).mockReturnValue({ email: "t@t.com", isExpired: false });
+
+    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+
+    await act(async () => {
+      result.current.setToken(null);
+    });
+
+    expect(authService.clearAuthToken).toHaveBeenCalled();
+  });
+
+  it("should clear token when setToken receives an invalid/expired token", async () => {
+    vi.mocked(authService.getAuthToken).mockReturnValue(null);
+    vi.mocked(authService.getAuthUser).mockReturnValue({ isExpired: true });
+
+    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+
+    await act(async () => {
+      result.current.setToken("invalid-token");
+    });
+
+    expect(authService.clearAuthToken).toHaveBeenCalled();
+  });
+
+  it("should clear token on init if token is expired", async () => {
+    vi.mocked(authService.getAuthToken).mockReturnValue("expired-token");
+    vi.mocked(authService.isTokenExpired).mockReturnValue(false); // token exists but user check fails
+    vi.mocked(authService.getAuthUser).mockReturnValue({ isExpired: true });
+
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>
+    );
+
+    expect(authService.clearAuthToken).toHaveBeenCalled();
   });
 
   it("should clear token when logout is called", async () => {

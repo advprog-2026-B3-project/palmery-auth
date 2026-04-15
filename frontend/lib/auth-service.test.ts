@@ -5,7 +5,9 @@ import {
   isTokenExpired, 
   getAuthUser, 
   isAuthenticated,
-  authFetch
+  authFetch,
+  redirectToLogin,
+  getAuthApiBase
 } from "./auth-service";
 import * as authStorage from "./auth-storage";
 
@@ -127,6 +129,25 @@ describe("auth-service", () => {
       await authFetch("http://api.test");
 
       expect(authStorage.clearToken).toHaveBeenCalled();
+      expect(window.location.href).toContain("/login?error=session_unauthorized");
+    });
+  });
+
+  describe("redirectToLogin", () => {
+    it("should redirect without error param", () => {
+      redirectToLogin();
+      expect(window.location.href).toBe("/login");
+    });
+
+    it("should redirect with error param", () => {
+      redirectToLogin("test_error");
+      expect(window.location.href).toBe("/login?error=test_error");
+    });
+  });
+
+  describe("getAuthApiBase", () => {
+    it("should return the default API base", () => {
+      expect(getAuthApiBase()).toBe("http://localhost:8080");
     });
   });
 });
