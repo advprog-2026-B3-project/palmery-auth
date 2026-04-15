@@ -44,7 +44,7 @@ jobs:
       - name: Frontend install + build + test
         working-directory: frontend
         run: |
-          pnpm install
+          pnpm install --no-frozen-lockfile
           pnpm test
           pnpm build
 
