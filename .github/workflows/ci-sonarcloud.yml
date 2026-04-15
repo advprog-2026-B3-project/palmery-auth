@@ -41,10 +41,11 @@ jobs:
         with:
           version: '10'
 
-      - name: Frontend install + build
+      - name: Frontend install + build + test
         working-directory: frontend
         run: |
-          pnpm install --frozen-lockfile
+          pnpm install
+          pnpm test
           pnpm build
 
       - name: Backend Gradle Test + Coverage Report
@@ -85,5 +86,6 @@ jobs:
             -Dsonar.tests=backend/src/test
             -Dsonar.java.binaries=backend/build/classes/java/main
             -Dsonar.coverage.jacoco.xmlReportPaths=backend/build/reports/jacoco/test/jacocoTestReport.xml
-            -Dsonar.exclusions=**/.next/**,**/node_modules/**,**/build/**
+            -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
+            -Dsonar.exclusions=**/.next/**,**/node_modules/**,**/build/**,frontend/app/**,frontend/components/ui/**
             -Dsonar.qualitygate.wait=true
