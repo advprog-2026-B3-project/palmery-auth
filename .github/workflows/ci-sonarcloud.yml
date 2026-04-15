@@ -46,6 +46,8 @@ jobs:
         run: |
           pnpm install --no-frozen-lockfile
           pnpm test
+          # Fix paths in lcov.info to be relative to root
+          sed -i 's|SF:|SF:frontend/|g' coverage/lcov.info
           pnpm build
 
       - name: Backend Gradle Test + Coverage Report
@@ -82,10 +84,11 @@ jobs:
             -Dsonar.projectName=palmery-auth
             -Dsonar.host.url=https://sonarcloud.io
             -Dsonar.sourceEncoding=UTF-8
-            -Dsonar.sources=backend/src/main,frontend/app,frontend/lib
-            -Dsonar.tests=backend/src/test
+            -Dsonar.sources=backend/src/main,frontend/app,frontend/lib,frontend/context
+            -Dsonar.tests=backend/src/test,frontend/lib,frontend/context
             -Dsonar.java.binaries=backend/build/classes/java/main
             -Dsonar.coverage.jacoco.xmlReportPaths=backend/build/reports/jacoco/test/jacocoTestReport.xml
             -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
-            -Dsonar.exclusions=**/.next/**,**/node_modules/**,**/build/**,frontend/app/**,frontend/components/ui/**
+            -Dsonar.exclusions=**/.next/**,**/node_modules/**,**/build/**
+            -Dsonar.coverage.exclusions=frontend/app/**,frontend/components/ui/**
             -Dsonar.qualitygate.wait=true
