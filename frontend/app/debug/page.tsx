@@ -2,16 +2,22 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import {
-  createDebugEvent,
-  fetchDebugEvents,
-  fetchIntegrationStatus,
-} from "@/lib/auth-api";
+import { createDebugEvent, fetchDebugEvents, fetchIntegrationStatus } from "@/lib/auth-api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 type ConnectionState = {
   status: string;
   latencyMs?: number;
 };
+
+function valueToText(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+  return String(value);
+}
 
 export default function DebugPage() {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
@@ -54,7 +60,7 @@ export default function DebugPage() {
 
     try {
       await createDebugEvent();
-      setMessage("Event written. Load debug events to verify database read/write.");
+      setMessage("Event written. Load debug events to verify read/write path.");
     } catch (err) {
       setMessage(null);
       setError(err instanceof Error ? err.message : "Unexpected error");
@@ -76,39 +82,93 @@ export default function DebugPage() {
   }
 
   return (
-    <main>
-      <h1>Integration Debug</h1>
-      <p>Validate frontend -&gt; backend and backend -&gt; database connection.</p>
+    <main className="page page-stack">
+      <header className="page-header">
+        <h1 className="page-title">Integration Debug</h1>
+        <p className="page-subtitle">
+          Checks frontend to backend and backend to database connectivity with simple diagnostics.
+        </p>
+      </header>
 
-      <button type="button" onClick={loadStatus}>Check Connection Status</button>
-      <button type="button" onClick={addEvent}>Write Debug Event</button>
-      <button type="button" onClick={loadEvents}>Read Debug Events</button>
+      <Card>
+        <CardHeader>
+          <CardTitle>Actions</CardTitle>
+          <CardDescription>Run live checks and event write/read verification.</CardDescription>
+        </CardHeader>
+        <CardContent className="page-stack">
+          <div className="action-row">
+            <Button type="button" onClick={loadStatus}>
+              Check Connection Status
+            </Button>
+            <Button type="button" variant="secondary" onClick={addEvent}>
+              Write Debug Event
+            </Button>
+            <Button type="button" variant="outline" onClick={loadEvents}>
+              Read Debug Events
+            </Button>
+          </div>
 
-      {message ? <p>{message}</p> : null}
-      {error ? <p>{error}</p> : null}
+          {message ? (
+            <p>
+              <Badge variant="success">status</Badge> {message}
+            </p>
+          ) : null}
 
-      <h2>Frontend to Backend</h2>
-      <pre>{JSON.stringify(frontendToBackend, null, 2)}</pre>
+          {error ? (
+            <p>
+              <Badge variant="danger">error</Badge> {error}
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
 
-      <h2>Backend to Database</h2>
-      <pre>{JSON.stringify(backendToDatabase, null, 2)}</pre>
+      <Card>
+        <CardHeader>
+          <CardTitle>Connection Stats</CardTitle>
+          <CardDescription>Monotone quick view for both integration legs.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <p className="stat-label">Frontend to Backend</p>
+              <p className="stat-value">{valueToText(frontendToBackend.status)}</p>
+              <p className="inline-note">Latency: {valueToText(frontendToBackend.latencyMs)} ms</p>
+            </div>
+            <div className="stat-card">
+              <p className="stat-label">Backend to Database</p>
+              <p className="stat-value">{valueToText(backendToDatabase.status)}</p>
+              <p className="inline-note">Latency: {valueToText(backendToDatabase.latencyMs)} ms</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {status ? (
-        <>
-          <h2>Raw Backend Payload</h2>
-          <pre>{JSON.stringify(status, null, 2)}</pre>
-        </>
+        <Card>
+          <CardHeader>
+            <CardTitle>Raw Backend Payload</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <pre className="pre-block">{JSON.stringify(status, null, 2)}</pre>
+          </CardContent>
+        </Card>
       ) : null}
 
       {events.length > 0 ? (
-        <>
-          <h2>Latest Debug Events</h2>
-          <pre>{JSON.stringify(events, null, 2)}</pre>
-        </>
+        <Card>
+          <CardHeader>
+            <CardTitle>Latest Debug Events</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <pre className="pre-block">{JSON.stringify(events, null, 2)}</pre>
+          </CardContent>
+        </Card>
       ) : null}
 
-      <p>
-        <Link href="/">Back to home</Link>
+      <p className="inline-note">
+        <Link className="page-link" href="/">
+          Back to home
+        </Link>
       </p>
     </main>
   );

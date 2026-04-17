@@ -1,0 +1,134 @@
+.navbar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(10px);
+}
+
+.navbar-start {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+}
+
+.navbar-brand {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-decoration: none;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.navbar-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.navbar-links a:hover {
+  background: #f4f4f5;
+  color: var(--accent);
+}
+
+.navbar-end {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navbar-name {
+  margin: 0 0 0.15rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.navbar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.navbar-badge-admin {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.navbar-badge-mandor {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.navbar-badge-buruh {
+  background: #ecfdf5;
+  color: #166534;
+}
+
+.navbar-badge-supir {
+  background: #fef9c3;
+  color: #92400e;
+}
+
+.navbar-badge-default {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.navbar-logout {
+  min-height: 38px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: transparent;
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 0 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.navbar-logout:hover {
+  background: #f4f4f5;
+}
+
+@media (max-width: 760px) {
+  .navbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8rem;
+  }
+
+  .navbar-start,
+  .navbar-end {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .navbar-links {
+    justify-content: flex-start;
+  }
+}

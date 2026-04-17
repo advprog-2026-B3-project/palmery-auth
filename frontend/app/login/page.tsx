@@ -1,109 +1,115 @@
 "use client";
 
+import "./login.css";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
-import { introspectToken, loginForToken, TokenResponse } from "@/lib/auth-api";
-
-type LoginState = {
-  email: string;
-  password: string;
-};
-
-const initialState: LoginState = {
-  email: "",
-  password: "",
-};
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { loginForToken } from "@/lib/auth-api";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-  const [form, setForm] = useState<LoginState>(initialState);
-  const [token, setToken] = useState<TokenResponse | null>(null);
-  const [introspection, setIntrospection] = useState<Record<string, unknown> | null>(null);
+  const router = useRouter();
+  const auth = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setStatus("Authenticating...");
-    setError(null);
-    setIntrospection(null);
-
-    try {
-      const tokenResponse = await loginForToken(form.email, form.password);
-      setToken(tokenResponse);
-      setStatus("Authenticated. Token issued.");
-    } catch (err) {
-      setToken(null);
-      setStatus(null);
-      setError(err instanceof Error ? err.message : "Unexpected error");
-    }
-  }
-
-  async function runIntrospection() {
-    if (!token?.access_token) {
+  useEffect(() => {
+    if (typeof window === "undefined") {
       return;
     }
 
-    setStatus("Introspecting token...");
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get("error");
+    if (oauthError) {
+      setError(oauthError.replace(/_/g, " "));
+    }
+  }, []);
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatus("Authenticating...");
     setError(null);
 
     try {
-      const response = await introspectToken(token.access_token);
-      setIntrospection(response);
-      setStatus("Introspection completed.");
+      const tokenResponse = await loginForToken(email, password);
+      auth.setToken(tokenResponse.access_token);
+      setStatus("Login berhasil. Redirecting to dashboard...");
+      router.replace("/dashboard");
     } catch (err) {
-      setIntrospection(null);
       setStatus(null);
       setError(err instanceof Error ? err.message : "Unexpected error");
     }
   }
 
   return (
-    <main>
-      <h1>Login</h1>
-      <p className="muted">Exchanges credentials for a JWT token.</p>
-      <div className="card">
-        <form onSubmit={onSubmit}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={(event) => setForm({ ...form, email: event.target.value })}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={(event) => setForm({ ...form, password: event.target.value })}
-            required
-          />
-          <button type="submit">Login</button>
-        </form>
-
-        {token && (
-          <>
-            <p className="status-ok">Token type: {token.token_type}</p>
-            <p className="muted">Expires in: {token.expires_in} seconds</p>
-            <pre>{token.access_token}</pre>
-            <button type="button" onClick={runIntrospection}>
-              Introspect Token
-            </button>
-          </>
-        )}
-
-        {introspection && (
-          <>
-            <h2>Introspection</h2>
-            <pre>{JSON.stringify(introspection, null, 2)}</pre>
-          </>
-        )}
-
-        {status && <p className="status-ok">{status}</p>}
-        {error && <p className="status-err">{error}</p>}
+    <div className="login-container">
+      
+      {/* LEFT SIDE */}
+      <div className="login-left">
+        <img
+          src="/palmery.svg"
+          alt="Palmery illustration"
+          className="login-image"
+        />
+        <h1 className="brand">Palmery</h1>
+        <p className="brand-subtitle">Access your account and manage orders, inventory, and users with a clean dashboard experience.</p>
       </div>
-      <p>
-        <Link href="/">Back to home</Link>
-      </p>
-    </main>
+
+      {/* RIGHT SIDE */}
+      <div className="login-right">
+
+        <div className="login-card">
+          <h2 className="title">Sign In</h2>
+          <p className="subtitle">Enter your email and password to continue to your MySawit account.</p>
+
+          {error ? <div className="auth-banner auth-banner-error">{error}</div> : null}
+          {status ? <div className="auth-banner auth-banner-success">{status}</div> : null}
+
+          <form onSubmit={onSubmit}>
+
+            <label>Email</label>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            <label>Password</label>
+            <input
+              type="password"
+              placeholder="********"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            <button type="submit">Log In</button>
+          </form>
+
+          <div className="oauth-actions">
+            <p>or continue with</p>
+            <a className="google-button" href="http://localhost:8080/auth/google">
+              <span className="google-button-icon">G</span>
+              Login with Google
+            </a>
+          </div>
+
+          <div className="login-footer">
+            <p className="links">
+              Don’t have an account? <Link href="/register">Create Account</Link>
+            </p>
+            <p className="links">
+              Forgot Password? <Link href="#">Reset</Link>
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
   );
 }
