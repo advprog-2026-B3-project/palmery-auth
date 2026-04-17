@@ -58,7 +58,7 @@ export default function RegisterPage() {
     <div className="login-container">
       <div className="login-left">
         <img
-          src="/login-illustration.png"
+          src="/palmery.svg"
           alt="Palmery illustration"
           className="login-image"
         />

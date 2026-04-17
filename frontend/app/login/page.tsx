@@ -2,14 +2,30 @@
 
 import "./login.css";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { loginForToken } from "@/lib/auth-api";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const auth = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get("error");
+    if (oauthError) {
+      setError(oauthError.replace(/_/g, " "));
+    }
+  }, []);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -17,8 +33,10 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      await loginForToken(email, password);
-      setStatus("Login berhasil. Token dibuat.");
+      const tokenResponse = await loginForToken(email, password);
+      auth.setToken(tokenResponse.access_token);
+      setStatus("Login berhasil. Redirecting to dashboard...");
+      router.replace("/dashboard");
     } catch (err) {
       setStatus(null);
       setError(err instanceof Error ? err.message : "Unexpected error");
@@ -31,18 +49,23 @@ export default function LoginPage() {
       {/* LEFT SIDE */}
       <div className="login-left">
         <img
-          src="/login-illustration.png"
+          src="/palmery.svg"
           alt="Palmery illustration"
           className="login-image"
         />
         <h1 className="brand">Palmery</h1>
+        <p className="brand-subtitle">Access your account and manage orders, inventory, and users with a clean dashboard experience.</p>
       </div>
 
       {/* RIGHT SIDE */}
       <div className="login-right">
 
         <div className="login-card">
-          <h2 className="title">Welcome Back!</h2>
+          <h2 className="title">Sign In</h2>
+          <p className="subtitle">Enter your email and password to continue to your MySawit account.</p>
+
+          {error ? <div className="auth-banner auth-banner-error">{error}</div> : null}
+          {status ? <div className="auth-banner auth-banner-success">{status}</div> : null}
 
           <form onSubmit={onSubmit}>
 
@@ -67,18 +90,22 @@ export default function LoginPage() {
             <button type="submit">Log In</button>
           </form>
 
-          <p className="links">
-            Don’t have an account?{" "}
-            <Link href="/register">Sign Up</Link>
-          </p>
+          <div className="oauth-actions">
+            <p>or continue with</p>
+            <a className="google-button" href="http://localhost:8080/auth/google">
+              <span className="google-button-icon">G</span>
+              Login with Google
+            </a>
+          </div>
 
-          <p className="links">
-            Forgot Password?{" "}
-            <Link href="#">Click Here</Link>
-          </p>
-
-          {status && <p className="status">{status}</p>}
-          {error && <p className="error">{error}</p>}
+          <div className="login-footer">
+            <p className="links">
+              Don’t have an account? <Link href="/register">Create Account</Link>
+            </p>
+            <p className="links">
+              Forgot Password? <Link href="#">Reset</Link>
+            </p>
+          </div>
         </div>
 
       </div>

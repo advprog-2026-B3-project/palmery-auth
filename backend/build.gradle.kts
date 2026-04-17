@@ -83,3 +83,13 @@ tasks.jacocoTestCoverageVerification {
 tasks.check {
     dependsOn(tasks.jacocoTestCoverageVerification)
 }
+
+// Reduce memory footprint for local bootRun to avoid OOM on low-resource machines
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    jvmArgs(
+        "-Xms32m",
+        "-Xmx128m",
+        "-XX:+UseSerialGC",
+        "-Dfile.encoding=UTF-8"
+    )
+}
