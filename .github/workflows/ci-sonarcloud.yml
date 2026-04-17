@@ -71,8 +71,31 @@ jobs:
             exit 1
           fi
 
-      - name: SonarCloud Scan (+ wait for Quality Gate)
-        uses: SonarSource/sonarcloud-github-action@v2
+      - name: Sonar Vulnerability Gate (PR)
+        if: github.event_name == 'pull_request'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+        run: |
+          set -euo pipefail
+          query="pullRequest=${{ github.event.pull_request.number }}"
+          response=$(curl -sS -u "${SONAR_TOKEN}:" \
+            "${SONAR_HOST_URL}/api/issues/search?componentKeys=${SONAR_PROJECT_KEY}&types=VULNERABILITY&resolved=false&ps=1&${query}")
+          api_errors=$(echo "${response}" | jq '.errors | length // 0')
+          if [ "${api_errors}" -gt 0 ]; then
+            echo "Sonar API returned errors:"
+            echo "${response}" | jq -c '.errors'
+            exit 1
+          fi
+          total=$(echo "${response}" | jq -r '.total // 0')
+          echo "Sonar unresolved vulnerabilities: ${total}"
+          [ "${total}" -eq 0 ]
+
+      - name: SonarCloud Quality Gate
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: SonarSource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
