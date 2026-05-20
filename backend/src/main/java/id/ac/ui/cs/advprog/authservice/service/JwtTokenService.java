@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.authservice.service;
 
 import id.ac.ui.cs.advprog.authservice.config.AuthProperties;
 import id.ac.ui.cs.advprog.authservice.model.User;
+import id.ac.ui.cs.advprog.authservice.util.ManageRoleMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -34,7 +35,8 @@ public class JwtTokenService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", user.getEmail());
         claims.put("name", user.getName());
-        claims.put("role", user.getRole());
+        claims.put("role", ManageRoleMapper.toManageRole(user.getRole()));
+        claims.put("auth_role", user.getRole());
         claims.put("scope", normalizeScope(scope));
 
         return buildToken(user.getId(), claims);

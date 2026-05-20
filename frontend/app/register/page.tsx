@@ -2,8 +2,9 @@
 
 import "../login/login.css";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { registerUser } from "@/lib/auth-api";
+import { getReturnUrlFromSearch } from "@/lib/return-url";
 
 type RegisterState = {
   name: string;
@@ -25,6 +26,13 @@ export default function RegisterPage() {
   const [form, setForm] = useState<RegisterState>(initialState);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [returnUrl, setReturnUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setReturnUrl(getReturnUrlFromSearch(window.location.search));
+    }
+  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -129,7 +137,16 @@ export default function RegisterPage() {
           </form>
 
           <p className="links">
-            Sudah punya akun? <Link href="/login">Login</Link>
+            Sudah punya akun?{" "}
+            <Link
+              href={
+                returnUrl
+                  ? `/login?returnUrl=${encodeURIComponent(returnUrl)}`
+                  : "/login"
+              }
+            >
+              Login
+            </Link>
           </p>
 
           {status && <p className="status">{status}</p>}

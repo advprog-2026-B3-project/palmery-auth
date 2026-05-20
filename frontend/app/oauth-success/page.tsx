@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { introspectToken } from "@/lib/auth-api";
 import { getAuthUser, isTokenExpired } from "@/lib/auth-service";
 import { useAuth } from "@/context/AuthContext";
+import {
+  buildCallbackWithToken,
+  getReturnUrlFromSearch,
+} from "@/lib/return-url";
 
 export default function OAuthSuccessPage() {
   const router = useRouter();
@@ -48,6 +52,11 @@ export default function OAuthSuccessPage() {
       .then((data) => {
         if (data.active === true) {
           setToken(token);
+          const returnUrl = getReturnUrlFromSearch(window.location.search);
+          if (returnUrl) {
+            window.location.href = buildCallbackWithToken(returnUrl, token);
+            return;
+          }
           router.replace("/dashboard");
           return;
         }
