@@ -1,8 +1,11 @@
 package id.ac.ui.cs.advprog.authservice.config;
 
+import id.ac.ui.cs.advprog.authservice.security.GoogleOAuthFailureHandler;
+import id.ac.ui.cs.advprog.authservice.security.GoogleOAuthSuccessHandler;
 import id.ac.ui.cs.advprog.authservice.service.AuthUserDetailsService;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -53,7 +56,10 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             DaoAuthenticationProvider daoAuthenticationProvider,
-            CorsConfigurationSource corsConfigurationSource
+            CorsConfigurationSource corsConfigurationSource,
+            AuthProperties authProperties,
+            ObjectProvider<GoogleOAuthSuccessHandler> googleOAuthSuccessHandlerProvider,
+            ObjectProvider<GoogleOAuthFailureHandler> googleOAuthFailureHandlerProvider
     ) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -61,15 +67,26 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(daoAuthenticationProvider)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.GET, "/", "/api/auth/info").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/token", "/api/auth/introspect").permitAll()
                         .requestMatchers("/api/debug/**", "/h2-console/**").permitAll()
+                        .requestMatchers("/auth/google", "/oauth2/**", "/login/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()));
+
+        if (authProperties.isGoogleEnabled()) {
+            http
+                    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                    .oauth2Login(oauth2 -> oauth2
+                            .successHandler(googleOAuthSuccessHandlerProvider.getObject())
+                            .failureHandler(googleOAuthFailureHandlerProvider.getObject())
+                    );
+        } else {
+            http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        }
 
         return http.build();
     }

@@ -9,6 +9,7 @@ import id.ac.ui.cs.advprog.authservice.repo.UserAccountRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -67,6 +68,36 @@ public class UserService {
                 .map(this::mapToUser);
     }
 
+    public Optional<User> findOrCreateOauthUser(String email, String displayName, String requestedRole) {
+        if (email == null || email.isBlank()) {
+            return Optional.empty();
+        }
+
+        String normalizedEmail = email.toLowerCase(Locale.ROOT).trim();
+        Optional<UserAccount> existingAccount = userAccountRepository.findByEmail(normalizedEmail);
+        if (existingAccount.isPresent()) {
+            return existingAccount.map(this::mapToUser);
+        }
+
+        String normalizedName = normalizeDisplayName(displayName, normalizedEmail);
+        String roleName = resolveRoleName(requestedRole);
+        Optional<Role> roleOpt = roleRepository.findByName(roleName);
+        if (roleOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        String passwordHash = encoder.encode(UUID.randomUUID().toString());
+        UserAccount account = new UserAccount(
+                normalizedName,
+                normalizedEmail,
+                passwordHash,
+                roleOpt.get()
+        );
+
+        userAccountRepository.save(account);
+        return Optional.of(mapToUser(account));
+    }
+
     private boolean isValidRegisterRequest(RegisterRequest req) {
         if (req == null) {
             return false;
@@ -91,6 +122,19 @@ public class UserService {
             return "WORKER";
         }
         return requestedRole.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private String normalizeDisplayName(String displayName, String normalizedEmail) {
+        if (displayName != null && !displayName.isBlank()) {
+            return displayName.trim();
+        }
+
+        int atIndex = normalizedEmail.indexOf('@');
+        if (atIndex > 0) {
+            return normalizedEmail.substring(0, atIndex);
+        }
+
+        return normalizedEmail;
     }
 
     private User mapToUser(UserAccount account) {

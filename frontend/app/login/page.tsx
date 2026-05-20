@@ -6,8 +6,10 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginForToken } from "@/lib/auth-api";
 import { useAuth } from "@/context/AuthContext";
+import { getAuthApiBase } from "@/lib/auth-service";
 
 export default function LoginPage() {
+  const googleAuthUrl = `${getAuthApiBase()}/auth/google`;
   const router = useRouter();
   const auth = useAuth();
   const [email, setEmail] = useState("");
@@ -92,7 +94,7 @@ export default function LoginPage() {
 
           <div className="oauth-actions">
             <p>or continue with</p>
-            <a className="google-button" href="http://localhost:8080/auth/google">
+            <a className="google-button" href={googleAuthUrl}>
               <span className="google-button-icon">G</span>
               Login with Google
             </a>

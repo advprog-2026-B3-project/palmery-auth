@@ -110,5 +110,51 @@ class UserServiceTest {
         assertTrue(result.isPresent());
         assertEquals("andi@test.com", result.get().getEmail());
     }
+
+    @Test
+    @DisplayName("OAuth login creates user with fallback role and generated password")
+    void testFindOrCreateOauthUserCreatesAccount() {
+        Role role = new Role("WORKER", "Pekerja / buruh");
+
+        when(mockAccountRepo.findByEmail("google@test.com")).thenReturn(Optional.empty());
+        when(mockRoleRepo.findByName("WORKER")).thenReturn(Optional.of(role));
+        when(mockEncoder.encode(any(String.class))).thenReturn("generated_hash");
+
+        Optional<User> result = userService.findOrCreateOauthUser("google@test.com", "Google User", "WORKER");
+
+        assertTrue(result.isPresent());
+        assertEquals("google@test.com", result.get().getEmail());
+        assertEquals("Google User", result.get().getName());
+        assertEquals("WORKER", result.get().getRole());
+
+        ArgumentCaptor<UserAccount> accountCaptor = ArgumentCaptor.forClass(UserAccount.class);
+        verify(mockAccountRepo).save(accountCaptor.capture());
+        UserAccount saved = accountCaptor.getValue();
+        assertEquals("Google User", saved.getName());
+        assertEquals("google@test.com", saved.getEmail());
+        assertEquals("generated_hash", saved.getPasswordHash());
+    }
+
+    @Test
+    @DisplayName("OAuth login returns existing user without creating duplicate account")
+    void testFindOrCreateOauthUserReturnsExistingUser() {
+        Role role = new Role("WORKER", "Pekerja / buruh");
+        UserAccount account = new UserAccount(
+                "Existing User",
+                "existing@test.com",
+                "hashed",
+                role
+        );
+
+        when(mockAccountRepo.findByEmail("existing@test.com")).thenReturn(Optional.of(account));
+
+        Optional<User> result = userService.findOrCreateOauthUser("existing@test.com", "Ignored Name", "WORKER");
+
+        assertTrue(result.isPresent());
+        assertEquals("existing@test.com", result.get().getEmail());
+        assertEquals("Existing User", result.get().getName());
+        verify(mockAccountRepo, never()).save(any(UserAccount.class));
+        verify(mockRoleRepo, never()).findByName(any(String.class));
+    }
 }
 
