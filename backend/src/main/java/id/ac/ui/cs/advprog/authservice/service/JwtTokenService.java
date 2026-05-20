@@ -33,6 +33,7 @@ public class JwtTokenService {
     public String generateAccessToken(User user, String scope) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", user.getEmail());
+        claims.put("name", user.getName());
         claims.put("role", user.getRole());
         claims.put("scope", normalizeScope(scope));
 

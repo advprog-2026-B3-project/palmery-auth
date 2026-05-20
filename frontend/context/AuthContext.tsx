@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   AuthUser,
   clearAuthToken,
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setInitialized(true);
   }, []);
 
-  const setToken = (value: string | null) => {
+  const setToken = useCallback((value: string | null) => {
     if (!value) {
       clearAuthToken();
       setTokenState(null);
@@ -70,13 +70,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     saveAuthToken(value);
     setTokenState(value);
     setUserState(authUser);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     clearAuthToken();
     setTokenState(null);
     setUserState(null);
-  };
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken,
       logout,
     }),
-    [token, user, initialized]
+    [token, user, initialized, setToken, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

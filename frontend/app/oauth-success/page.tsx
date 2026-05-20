@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { introspectToken } from "@/lib/auth-api";
 import { getAuthUser, isTokenExpired } from "@/lib/auth-service";
@@ -8,14 +8,16 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function OAuthSuccessPage() {
   const router = useRouter();
-  const auth = useAuth();
+  const { setToken, logout } = useAuth();
   const [status, setStatus] = useState("Processing Google OAuth login...");
   const [error, setError] = useState<string | null>(null);
+  const handledRef = useRef(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (typeof window === "undefined" || handledRef.current) {
       return;
     }
+    handledRef.current = true;
 
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
@@ -26,7 +28,7 @@ export default function OAuthSuccessPage() {
     }
 
     if (isTokenExpired(token)) {
-      auth.logout();
+      logout();
       setError("OAuth token is expired.");
       router.replace("/login?error=oauth_expired");
       return;
@@ -34,31 +36,32 @@ export default function OAuthSuccessPage() {
 
     const authUser = getAuthUser(token);
     if (!authUser) {
-      auth.logout();
+      logout();
       setError("Unable to read OAuth token payload.");
       router.replace("/login?error=oauth_invalid_token");
       return;
     }
 
-    auth.setToken(token);
     setStatus("Verifying token with backend...");
 
     introspectToken(token)
       .then((data) => {
-        if (data.active) {
+        if (data.active === true) {
+          setToken(token);
           router.replace("/dashboard");
-        } else {
-          auth.logout();
-          setError("OAuth token is invalid or inactive.");
-          router.replace("/login?error=oauth_invalid_token");
+          return;
         }
+
+        logout();
+        setError("OAuth token is invalid or inactive.");
+        router.replace("/login?error=oauth_invalid_token");
       })
       .catch(() => {
-        auth.logout();
+        logout();
         setError("OAuth token verification failed.");
         router.replace("/login?error=oauth_invalid_token");
       });
-  }, [auth, router]);
+  }, [logout, router, setToken]);
 
   return (
     <main className="page page-stack">
