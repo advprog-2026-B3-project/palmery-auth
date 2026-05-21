@@ -4,7 +4,7 @@ import "../login/login.css";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { registerUser } from "@/lib/auth-api";
+import { registerUser, type RegisterPayload } from "@/lib/auth-api";
 
 type RegisterState = {
   name: string;
@@ -57,12 +57,16 @@ export default function RegisterPage() {
         return;
       }
 
-      const payload = {
+      const payload: RegisterPayload = {
         name: form.name,
         email: form.email,
         password: form.password,
         role: form.role,
       };
+
+      if (form.role === "SUPERVISOR") {
+        payload.supervisorCertNumber = form.supervisorCertNumber?.trim();
+      }
 
       await registerUser(payload);
       setRedirectCountdown(3);

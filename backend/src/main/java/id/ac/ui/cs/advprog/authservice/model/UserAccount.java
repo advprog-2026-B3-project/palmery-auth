@@ -37,6 +37,9 @@ public class UserAccount {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
+    @Column(name = "supervisor_cert_number", length = 100)
+    private String supervisorCertNumber;
+
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
@@ -97,7 +100,15 @@ public class UserAccount {
     public void setRole(Role role) {
         this.role = role;
     }
-    
+
+    public String getSupervisorCertNumber() {
+        return supervisorCertNumber;
+    }
+
+    public void setSupervisorCertNumber(String supervisorCertNumber) {
+        this.supervisorCertNumber = supervisorCertNumber;
+    }
+
     public boolean isActive() {
         return active;
     }

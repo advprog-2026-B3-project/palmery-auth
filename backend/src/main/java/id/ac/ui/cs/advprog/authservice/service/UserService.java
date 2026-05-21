@@ -52,6 +52,10 @@ public class UserService {
                 roleOpt.get()
         );
 
+        if ("SUPERVISOR".equals(roleName)) {
+            account.setSupervisorCertNumber(req.getSupervisorCertNumber().trim());
+        }
+
         userAccountRepository.save(account);
 
         User user = mapToUser(account);
@@ -112,8 +116,17 @@ public class UserService {
         if (email.isEmpty() || name.isEmpty()) {
             return false;
         }
-        // Validasi sederhana panjang password
-        return password.length() >= 6;
+        if (password.length() < 6) {
+            return false;
+        }
+
+        String roleName = resolveRoleName(req.getRole());
+        if ("SUPERVISOR".equals(roleName)) {
+            String certNumber = req.getSupervisorCertNumber();
+            return certNumber != null && !certNumber.trim().isEmpty();
+        }
+
+        return true;
     }
 
     private String resolveRoleName(String requestedRole) {
