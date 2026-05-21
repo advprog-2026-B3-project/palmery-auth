@@ -2,6 +2,13 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:3001",
   "http://127.0.0.1:3001",
 ];
+const DEFAULT_RETURN_URL =
+  process.env.NEXT_PUBLIC_APP_CALLBACK_URL ??
+  "http://localhost:3001/auth/callback";
+
+export function getDefaultReturnUrl(): string | null {
+  return sanitizeReturnUrl(DEFAULT_RETURN_URL);
+}
 
 export function getReturnUrlFromSearch(search: string): string | null {
   if (typeof window === "undefined") {

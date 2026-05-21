@@ -10,6 +10,7 @@ import { getAuthApiBase } from "@/lib/auth-service";
 import {
   buildCallbackWithToken,
   getReturnUrlFromSearch,
+  getDefaultReturnUrl,
 } from "@/lib/return-url";
 
 export default function LoginPage() {
@@ -21,6 +22,9 @@ export default function LoginPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [returnUrl, setReturnUrl] = useState<string | null>(null);
+  const registerHref = returnUrl
+    ? `/register?returnUrl=${encodeURIComponent(returnUrl)}`
+    : "/register";
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -32,7 +36,9 @@ export default function LoginPage() {
     if (oauthError) {
       setError(oauthError.replace(/_/g, " "));
     }
-    setReturnUrl(getReturnUrlFromSearch(window.location.search));
+    setReturnUrl(
+      getReturnUrlFromSearch(window.location.search) ?? getDefaultReturnUrl(),
+    );
   }, []);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -123,7 +129,7 @@ export default function LoginPage() {
 
           <div className="login-footer">
             <p className="links">
-              Don’t have an account? <Link href="/register">Create Account</Link>
+              Don’t have an account? <Link href={registerHref}>Create Account</Link>
             </p>
             <p className="links">
               Forgot Password? <Link href="#">Reset</Link>
