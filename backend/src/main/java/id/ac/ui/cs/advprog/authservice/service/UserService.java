@@ -9,6 +9,7 @@ import id.ac.ui.cs.advprog.authservice.repo.UserAccountRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.Locale;
 import java.util.Optional;
@@ -152,11 +153,24 @@ public class UserService {
 
     private User mapToUser(UserAccount account) {
         return new User(
+                account.getId().toString(),
                 account.getName(),
                 account.getEmail(),
                 account.getPasswordHash(),
                 account.getRole().getName()
         );
+    }
+
+    public List<UserAccount> findActiveAccountsByRole(String roleName) {
+        String normalized = resolveRoleName(roleName);
+        return userAccountRepository.findByRole_NameAndActiveTrue(normalized);
+    }
+
+    public List<UserAccount> findActiveAccountsByIds(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return userAccountRepository.findByIdInAndActiveTrue(ids);
     }
 }
 

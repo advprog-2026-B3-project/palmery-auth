@@ -7,6 +7,11 @@ import { useRouter } from "next/navigation";
 import { loginForToken } from "@/lib/auth-api";
 import { useAuth } from "@/context/AuthContext";
 import { getAuthApiBase } from "@/lib/auth-service";
+import {
+  buildCallbackWithToken,
+  getReturnUrlFromSearch,
+  getDefaultReturnUrl,
+} from "@/lib/return-url";
 
 export default function LoginPage() {
   const googleAuthUrl = `${getAuthApiBase()}/auth/google`;
@@ -16,6 +21,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [returnUrl, setReturnUrl] = useState<string | null>(null);
+  const registerHref = returnUrl
+    ? `/register?returnUrl=${encodeURIComponent(returnUrl)}`
+    : "/register";
 
   const [registeredNotice, setRegisteredNotice] = useState<string | null>(null);
 
@@ -43,6 +52,15 @@ export default function LoginPage() {
 
     try {
       const tokenResponse = await loginForToken(email, password);
+      if (returnUrl) {
+        auth.logout();
+        setStatus("Login berhasil. Mengalihkan ke aplikasi utama...");
+        window.location.href = buildCallbackWithToken(
+          returnUrl,
+          tokenResponse.access_token,
+        );
+        return;
+      }
       auth.setToken(tokenResponse.access_token);
       setStatus("Login berhasil. Redirecting to dashboard...");
       router.replace("/dashboard");
@@ -104,7 +122,14 @@ export default function LoginPage() {
 
           <div className="oauth-actions">
             <p>or continue with</p>
-            <a className="google-button" href={googleAuthUrl}>
+            <a
+              className="google-button"
+              href={
+                returnUrl
+                  ? `${googleAuthUrl}?returnUrl=${encodeURIComponent(returnUrl)}`
+                  : googleAuthUrl
+              }
+            >
               <span className="google-button-icon">G</span>
               Login with Google
             </a>
@@ -112,7 +137,7 @@ export default function LoginPage() {
 
           <div className="login-footer">
             <p className="links">
-              Don’t have an account? <Link href="/register">Create Account</Link>
+              Don’t have an account? <Link href={registerHref}>Create Account</Link>
             </p>
             <p className="links">
               Forgot Password? <Link href="#">Reset</Link>

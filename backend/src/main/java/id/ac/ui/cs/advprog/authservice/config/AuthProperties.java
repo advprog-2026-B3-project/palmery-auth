@@ -12,6 +12,11 @@ public class AuthProperties {
     private long accessTokenTtlSeconds = 3600;
     private List<String> allowedOrigins = List.of("http://localhost:3000");
     private String frontendBaseUrl = "http://localhost:3000";
+    private String appBaseUrl = "http://localhost:3001";
+    private List<String> allowedReturnOrigins = List.of(
+            "http://localhost:3001",
+            "http://127.0.0.1:3001"
+    );
     private String serviceClientId = "palmery-internal-service";
     private String serviceClientSecret = "replace-with-service-client-secret";
     private boolean googleEnabled;
@@ -57,6 +62,22 @@ public class AuthProperties {
 
     public void setFrontendBaseUrl(String frontendBaseUrl) {
         this.frontendBaseUrl = frontendBaseUrl;
+    }
+
+    public String getAppBaseUrl() {
+        return appBaseUrl;
+    }
+
+    public void setAppBaseUrl(String appBaseUrl) {
+        this.appBaseUrl = appBaseUrl;
+    }
+
+    public List<String> getAllowedReturnOrigins() {
+        return allowedReturnOrigins;
+    }
+
+    public void setAllowedReturnOrigins(List<String> allowedReturnOrigins) {
+        this.allowedReturnOrigins = allowedReturnOrigins;
     }
 
     public String getServiceClientId() {

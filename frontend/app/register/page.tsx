@@ -170,7 +170,16 @@ export default function RegisterPage() {
           </form>
 
           <p className="links">
-            Sudah punya akun? <Link href="/login">Login</Link>
+            Sudah punya akun?{" "}
+            <Link
+              href={
+                returnUrl
+                  ? `/login?returnUrl=${encodeURIComponent(returnUrl)}`
+                  : "/login"
+              }
+            >
+              Login
+            </Link>
           </p>
         </div>
       </div>

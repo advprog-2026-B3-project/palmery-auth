@@ -13,12 +13,16 @@ public class User {
         this.id = UUID.randomUUID().toString();
     }
 
-    public User(String name, String email, String passwordHash, String role) {
-        this.id = UUID.randomUUID().toString();
+    public User(String id, String name, String email, String passwordHash, String role) {
+        this.id = id;
         this.name = name;
         this.email = email;
         this.passwordHash = passwordHash;
         this.role = role;
+    }
+
+    public User(String name, String email, String passwordHash, String role) {
+        this(UUID.randomUUID().toString(), name, email, passwordHash, role);
     }
 
     public String getId() { return id; }
