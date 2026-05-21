@@ -17,6 +17,8 @@ export default function LoginPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [registeredNotice, setRegisteredNotice] = useState<string | null>(null);
+
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -26,6 +28,11 @@ export default function LoginPage() {
     const oauthError = params.get("error");
     if (oauthError) {
       setError(oauthError.replace(/_/g, " "));
+    }
+
+    if (params.get("registered") === "1") {
+      setRegisteredNotice("Akun berhasil didaftarkan. Silakan login dengan email dan password Anda.");
+      window.history.replaceState({}, "", "/login");
     }
   }, []);
 
@@ -66,6 +73,9 @@ export default function LoginPage() {
           <h2 className="title">Sign In</h2>
           <p className="subtitle">Enter your email and password to continue to your MySawit account.</p>
 
+          {registeredNotice ? (
+            <div className="auth-banner auth-banner-success">{registeredNotice}</div>
+          ) : null}
           {error ? <div className="auth-banner auth-banner-error">{error}</div> : null}
           {status ? <div className="auth-banner auth-banner-success">{status}</div> : null}
 

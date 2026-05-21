@@ -2,7 +2,8 @@
 
 import "../login/login.css";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { registerUser } from "@/lib/auth-api";
 
 type RegisterState = {
@@ -22,18 +23,36 @@ const initialState: RegisterState = {
 };
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [form, setForm] = useState<RegisterState>(initialState);
-  const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (redirectCountdown === null) {
+      return;
+    }
+
+    if (redirectCountdown <= 0) {
+      router.replace("/login?registered=1");
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setRedirectCountdown((current) => (current === null ? null : current - 1));
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [redirectCountdown, router]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("Mendaftarkan akun...");
     setError(null);
+    setIsSubmitting(true);
 
     try {
       if (form.role === "SUPERVISOR" && !form.supervisorCertNumber?.trim()) {
-        setStatus(null);
         setError("Nomor Sertifikasi Mandor wajib diisi.");
         return;
       }
@@ -45,14 +64,16 @@ export default function RegisterPage() {
         role: form.role,
       };
 
-      const message = await registerUser(payload);
-      setStatus(message);
-      setForm(initialState);
+      await registerUser(payload);
+      setRedirectCountdown(3);
     } catch (err) {
-      setStatus(null);
       setError(err instanceof Error ? err.message : "Unexpected error");
+    } finally {
+      setIsSubmitting(false);
     }
   }
+
+  const isRedirecting = redirectCountdown !== null;
 
   return (
     <div className="login-container">
@@ -69,6 +90,15 @@ export default function RegisterPage() {
         <div className="login-card">
           <h2 className="title">Buat Akun</h2>
 
+          {isRedirecting ? (
+            <div className="auth-banner auth-banner-success">
+              Akun berhasil didaftarkan. Mengalihkan ke halaman login dalam{" "}
+              <strong>{redirectCountdown}</strong> detik...
+            </div>
+          ) : null}
+
+          {error ? <div className="auth-banner auth-banner-error">{error}</div> : null}
+
           <form onSubmit={onSubmit}>
             <label htmlFor="name">Nama</label>
             <input
@@ -78,6 +108,7 @@ export default function RegisterPage() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
+              disabled={isRedirecting}
             />
 
             <label htmlFor="email">Email</label>
@@ -88,6 +119,7 @@ export default function RegisterPage() {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               required
+              disabled={isRedirecting}
             />
 
             <label htmlFor="password">Password</label>
@@ -98,6 +130,7 @@ export default function RegisterPage() {
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               required
+              disabled={isRedirecting}
             />
 
             <label htmlFor="role">Peran</label>
@@ -105,6 +138,7 @@ export default function RegisterPage() {
               id="role"
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
+              disabled={isRedirecting}
             >
               <option value="WORKER">Buruh</option>
               <option value="SUPERVISOR">Mandor</option>
@@ -121,19 +155,19 @@ export default function RegisterPage() {
                   value={form.supervisorCertNumber}
                   onChange={(e) => setForm({ ...form, supervisorCertNumber: e.target.value })}
                   required
+                  disabled={isRedirecting}
                 />
               </>
             ) : null}
 
-            <button type="submit">Register</button>
+            <button type="submit" disabled={isRedirecting || isSubmitting}>
+              {isSubmitting ? "Mendaftarkan..." : "Register"}
+            </button>
           </form>
 
           <p className="links">
             Sudah punya akun? <Link href="/login">Login</Link>
           </p>
-
-          {status && <p className="status">{status}</p>}
-          {error && <p className="error">{error}</p>}
         </div>
       </div>
     </div>
