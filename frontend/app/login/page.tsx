@@ -48,8 +48,8 @@ export default function LoginPage() {
 
     try {
       const tokenResponse = await loginForToken(email, password);
-      auth.setToken(tokenResponse.access_token);
       if (returnUrl) {
+        auth.logout();
         setStatus("Login berhasil. Mengalihkan ke aplikasi utama...");
         window.location.href = buildCallbackWithToken(
           returnUrl,
@@ -57,6 +57,7 @@ export default function LoginPage() {
         );
         return;
       }
+      auth.setToken(tokenResponse.access_token);
       setStatus("Login berhasil. Redirecting to dashboard...");
       router.replace("/dashboard");
     } catch (err) {

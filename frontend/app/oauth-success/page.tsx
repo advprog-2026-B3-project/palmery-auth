@@ -51,12 +51,13 @@ export default function OAuthSuccessPage() {
     introspectToken(token)
       .then((data) => {
         if (data.active === true) {
-          setToken(token);
           const returnUrl = getReturnUrlFromSearch(window.location.search);
           if (returnUrl) {
+            logout();
             window.location.href = buildCallbackWithToken(returnUrl, token);
             return;
           }
+          setToken(token);
           router.replace("/dashboard");
           return;
         }

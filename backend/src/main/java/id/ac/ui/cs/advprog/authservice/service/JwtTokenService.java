@@ -45,7 +45,7 @@ public class JwtTokenService {
     public String generateServiceToken(String clientId, String scope) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("client_id", clientId);
-        claims.put("role", "service");
+        claims.put("role", "SERVICE");
         claims.put("scope", normalizeScope(scope));
 
         return buildToken(clientId, claims);
