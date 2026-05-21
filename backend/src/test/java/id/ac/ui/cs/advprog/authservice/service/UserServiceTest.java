@@ -75,6 +75,47 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("Register SUPERVISOR without cert number - fails")
+    void testRegisterSupervisorWithoutCertNumber() {
+        RegisterRequest req = new RegisterRequest();
+        req.setName("Mandor Baru");
+        req.setEmail("mandor@test.com");
+        req.setPassword("password123");
+        req.setRole("SUPERVISOR");
+
+        Optional<User> result = userService.register(req);
+
+        assertTrue(result.isEmpty());
+        verifyNoInteractions(mockAccountRepo);
+    }
+
+    @Test
+    @DisplayName("Register SUPERVISOR with cert number - saves cert number")
+    void testRegisterSupervisorWithCertNumber() {
+        RegisterRequest req = new RegisterRequest();
+        req.setName("Mandor Baru");
+        req.setEmail("mandor@test.com");
+        req.setPassword("password123");
+        req.setRole("SUPERVISOR");
+        req.setSupervisorCertNumber("M-2024-12345");
+
+        Role role = new Role("SUPERVISOR", "Mandor / supervisor lapangan");
+
+        when(mockAccountRepo.existsByEmail("mandor@test.com")).thenReturn(false);
+        when(mockRoleRepo.findByName("SUPERVISOR")).thenReturn(Optional.of(role));
+        when(mockEncoder.encode("password123")).thenReturn("hashed_password");
+
+        Optional<User> result = userService.register(req);
+
+        assertTrue(result.isPresent());
+        assertEquals("SUPERVISOR", result.get().getRole());
+
+        ArgumentCaptor<UserAccount> accountCaptor = ArgumentCaptor.forClass(UserAccount.class);
+        verify(mockAccountRepo).save(accountCaptor.capture());
+        assertEquals("M-2024-12345", accountCaptor.getValue().getSupervisorCertNumber());
+    }
+
+    @Test
     @DisplayName("Register duplicate email - fails and does not save")
     void testRegisterDuplicateEmail() {
         RegisterRequest req = new RegisterRequest();

@@ -26,6 +26,8 @@ export default function LoginPage() {
     ? `/register?returnUrl=${encodeURIComponent(returnUrl)}`
     : "/register";
 
+  const [registeredNotice, setRegisteredNotice] = useState<string | null>(null);
+
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -36,9 +38,11 @@ export default function LoginPage() {
     if (oauthError) {
       setError(oauthError.replace(/_/g, " "));
     }
-    setReturnUrl(
-      getReturnUrlFromSearch(window.location.search) ?? getDefaultReturnUrl(),
-    );
+
+    if (params.get("registered") === "1") {
+      setRegisteredNotice("Akun berhasil didaftarkan. Silakan login dengan email dan password Anda.");
+      window.history.replaceState({}, "", "/login");
+    }
   }, []);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -87,6 +91,9 @@ export default function LoginPage() {
           <h2 className="title">Sign In</h2>
           <p className="subtitle">Enter your email and password to continue to your MySawit account.</p>
 
+          {registeredNotice ? (
+            <div className="auth-banner auth-banner-success">{registeredNotice}</div>
+          ) : null}
           {error ? <div className="auth-banner auth-banner-error">{error}</div> : null}
           {status ? <div className="auth-banner auth-banner-success">{status}</div> : null}
 

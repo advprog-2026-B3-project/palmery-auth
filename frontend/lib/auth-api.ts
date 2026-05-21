@@ -7,6 +7,7 @@ export type RegisterPayload = {
   email: string;
   password: string;
   role: string;
+  supervisorCertNumber?: string;
 };
 
 export type TokenResponse = {
