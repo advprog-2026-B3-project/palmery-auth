@@ -43,7 +43,28 @@ export default function LoginPage() {
       setRegisteredNotice("Akun berhasil didaftarkan. Silakan login dengan email dan password Anda.");
       window.history.replaceState({}, "", "/login");
     }
+
+    // If force=login is set (coming from external app), clear auth session
+    if (params.get("force") === "login" && auth.isAuthenticated) {
+      auth.logout();
+      return;
+    }
+
+    setReturnUrl(
+      getReturnUrlFromSearch(window.location.search) ?? getDefaultReturnUrl(),
+    );
   }, []);
+
+  // If user is already authenticated and there's a returnUrl, redirect immediately
+  // Only do this if the user didn't just come from a logout (check for "logout" param)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("force") === "login") return; // skip auto-redirect
+    if (auth.isAuthenticated && auth.token && returnUrl) {
+      window.location.href = buildCallbackWithToken(returnUrl, auth.token);
+    }
+  }, [auth.isAuthenticated, auth.token, returnUrl]);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
