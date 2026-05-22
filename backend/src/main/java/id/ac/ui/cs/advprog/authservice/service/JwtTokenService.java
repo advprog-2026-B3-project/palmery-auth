@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.authservice.service;
 
 import id.ac.ui.cs.advprog.authservice.config.AuthProperties;
 import id.ac.ui.cs.advprog.authservice.model.User;
+import id.ac.ui.cs.advprog.authservice.util.ManageRoleMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -33,7 +34,9 @@ public class JwtTokenService {
     public String generateAccessToken(User user, String scope) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", user.getEmail());
-        claims.put("role", user.getRole());
+        claims.put("name", user.getName());
+        claims.put("role", ManageRoleMapper.toManageRole(user.getRole()));
+        claims.put("auth_role", user.getRole());
         claims.put("scope", normalizeScope(scope));
 
         return buildToken(user.getId(), claims);
@@ -42,7 +45,7 @@ public class JwtTokenService {
     public String generateServiceToken(String clientId, String scope) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("client_id", clientId);
-        claims.put("role", "service");
+        claims.put("role", "SERVICE");
         claims.put("scope", normalizeScope(scope));
 
         return buildToken(clientId, claims);

@@ -34,7 +34,8 @@ class JwtTokenServiceTest {
         assertTrue(claims.isPresent());
         assertEquals(user.getId(), claims.get().getSubject());
         assertEquals("andi@test.com", claims.get().get("email"));
-        assertEquals("user", claims.get().get("role"));
+        assertEquals("Andi", claims.get().get("name"));
+        assertEquals("USER", claims.get().get("role"));
         assertEquals("http://localhost:8080", claims.get().getIssuer());
     }
 
@@ -49,7 +50,7 @@ class JwtTokenServiceTest {
         assertTrue(claims.isPresent());
         assertEquals("payment-service", claims.get().getSubject());
         assertEquals("payment-service", claims.get().get("client_id"));
-        assertEquals("service", claims.get().get("role"));
+        assertEquals("SERVICE", claims.get().get("role"));
     }
 
     @Test

@@ -1,19 +1,24 @@
 package id.ac.ui.cs.advprog.authservice.service;
 
 import id.ac.ui.cs.advprog.authservice.dto.RegisterRequest;
+import id.ac.ui.cs.advprog.authservice.model.Role;
 import id.ac.ui.cs.advprog.authservice.model.User;
-import id.ac.ui.cs.advprog.authservice.repo.InMemoryUserRepository;
+import id.ac.ui.cs.advprog.authservice.model.UserAccount;
+import id.ac.ui.cs.advprog.authservice.repo.RoleRepository;
+import id.ac.ui.cs.advprog.authservice.repo.UserAccountRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -24,14 +29,17 @@ class UserServiceTest {
     private UserService userService;
 
     @Mock
-    private InMemoryUserRepository mockRepo;
+    private UserAccountRepository mockAccountRepo;
+
+    @Mock
+    private RoleRepository mockRoleRepo;
 
     @Mock
     private PasswordEncoder mockEncoder;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(mockRepo, mockEncoder);
+        userService = new UserService(mockAccountRepo, mockRoleRepo, mockEncoder);
     }
 
     @Test
@@ -41,46 +49,153 @@ class UserServiceTest {
         req.setName("Andi");
         req.setEmail("andi@test.com");
         req.setPassword("password123");
-        req.setRole("user");
+        req.setRole("WORKER");
 
-        when(mockRepo.existsByEmail("andi@test.com")).thenReturn(false);
+        Role role = new Role("WORKER", "Pekerja / buruh");
+
+        when(mockAccountRepo.existsByEmail("andi@test.com")).thenReturn(false);
+        when(mockRoleRepo.findByName("WORKER")).thenReturn(Optional.of(role));
         when(mockEncoder.encode("password123")).thenReturn("hashed_password");
 
         Optional<User> result = userService.register(req);
 
         assertTrue(result.isPresent());
         assertEquals("andi@test.com", result.get().getEmail());
-        assertEquals("user", result.get().getRole());
-        verify(mockRepo).existsByEmail("andi@test.com");
-        verify(mockRepo).save(any(User.class));
+        assertEquals("WORKER", result.get().getRole());
+
+        verify(mockAccountRepo).existsByEmail("andi@test.com");
+        verify(mockRoleRepo).findByName("WORKER");
         verify(mockEncoder).encode("password123");
+
+        ArgumentCaptor<UserAccount> accountCaptor = ArgumentCaptor.forClass(UserAccount.class);
+        verify(mockAccountRepo).save(accountCaptor.capture());
+        UserAccount saved = accountCaptor.getValue();
+        assertEquals("hashed_password", saved.getPasswordHash());
+        assertEquals("andi@test.com", saved.getEmail());
+    }
+
+    @Test
+    @DisplayName("Register SUPERVISOR without cert number - fails")
+    void testRegisterSupervisorWithoutCertNumber() {
+        RegisterRequest req = new RegisterRequest();
+        req.setName("Mandor Baru");
+        req.setEmail("mandor@test.com");
+        req.setPassword("password123");
+        req.setRole("SUPERVISOR");
+
+        Optional<User> result = userService.register(req);
+
+        assertTrue(result.isEmpty());
+        verifyNoInteractions(mockAccountRepo);
+    }
+
+    @Test
+    @DisplayName("Register SUPERVISOR with cert number - saves cert number")
+    void testRegisterSupervisorWithCertNumber() {
+        RegisterRequest req = new RegisterRequest();
+        req.setName("Mandor Baru");
+        req.setEmail("mandor@test.com");
+        req.setPassword("password123");
+        req.setRole("SUPERVISOR");
+        req.setSupervisorCertNumber("M-2024-12345");
+
+        Role role = new Role("SUPERVISOR", "Mandor / supervisor lapangan");
+
+        when(mockAccountRepo.existsByEmail("mandor@test.com")).thenReturn(false);
+        when(mockRoleRepo.findByName("SUPERVISOR")).thenReturn(Optional.of(role));
+        when(mockEncoder.encode("password123")).thenReturn("hashed_password");
+
+        Optional<User> result = userService.register(req);
+
+        assertTrue(result.isPresent());
+        assertEquals("SUPERVISOR", result.get().getRole());
+
+        ArgumentCaptor<UserAccount> accountCaptor = ArgumentCaptor.forClass(UserAccount.class);
+        verify(mockAccountRepo).save(accountCaptor.capture());
+        assertEquals("M-2024-12345", accountCaptor.getValue().getSupervisorCertNumber());
     }
 
     @Test
     @DisplayName("Register duplicate email - fails and does not save")
     void testRegisterDuplicateEmail() {
         RegisterRequest req = new RegisterRequest();
+        req.setName("Budi");
         req.setEmail("budi@test.com");
         req.setPassword("password456");
 
-        when(mockRepo.existsByEmail("budi@test.com")).thenReturn(true);
+        when(mockAccountRepo.existsByEmail("budi@test.com")).thenReturn(true);
 
         Optional<User> result = userService.register(req);
 
         assertTrue(result.isEmpty());
-        verify(mockRepo).existsByEmail("budi@test.com");
-        verify(mockRepo, never()).save(any(User.class));
+        verify(mockAccountRepo).existsByEmail("budi@test.com");
+        verify(mockAccountRepo, never()).save(any(UserAccount.class));
+        verifyNoInteractions(mockRoleRepo);
     }
 
     @Test
     @DisplayName("Find by email returns user when present")
     void testFindByEmail() {
-        User user = new User("Andi", "andi@test.com", "hashed", "user");
-        when(mockRepo.findByEmail("andi@test.com")).thenReturn(Optional.of(user));
+        Role role = new Role("WORKER", "Pekerja / buruh");
+        UserAccount account = new UserAccount(
+                "Andi",
+                "andi@test.com",
+                "hashed",
+                role
+        );
+
+        when(mockAccountRepo.findByEmail("andi@test.com")).thenReturn(Optional.of(account));
 
         Optional<User> result = userService.findByEmail("andi@test.com");
 
         assertTrue(result.isPresent());
         assertEquals("andi@test.com", result.get().getEmail());
     }
+
+    @Test
+    @DisplayName("OAuth login creates user with fallback role and generated password")
+    void testFindOrCreateOauthUserCreatesAccount() {
+        Role role = new Role("WORKER", "Pekerja / buruh");
+
+        when(mockAccountRepo.findByEmail("google@test.com")).thenReturn(Optional.empty());
+        when(mockRoleRepo.findByName("WORKER")).thenReturn(Optional.of(role));
+        when(mockEncoder.encode(any(String.class))).thenReturn("generated_hash");
+
+        Optional<User> result = userService.findOrCreateOauthUser("google@test.com", "Google User", "WORKER");
+
+        assertTrue(result.isPresent());
+        assertEquals("google@test.com", result.get().getEmail());
+        assertEquals("Google User", result.get().getName());
+        assertEquals("WORKER", result.get().getRole());
+
+        ArgumentCaptor<UserAccount> accountCaptor = ArgumentCaptor.forClass(UserAccount.class);
+        verify(mockAccountRepo).save(accountCaptor.capture());
+        UserAccount saved = accountCaptor.getValue();
+        assertEquals("Google User", saved.getName());
+        assertEquals("google@test.com", saved.getEmail());
+        assertEquals("generated_hash", saved.getPasswordHash());
+    }
+
+    @Test
+    @DisplayName("OAuth login returns existing user without creating duplicate account")
+    void testFindOrCreateOauthUserReturnsExistingUser() {
+        Role role = new Role("WORKER", "Pekerja / buruh");
+        UserAccount account = new UserAccount(
+                "Existing User",
+                "existing@test.com",
+                "hashed",
+                role
+        );
+
+        when(mockAccountRepo.findByEmail("existing@test.com")).thenReturn(Optional.of(account));
+
+        Optional<User> result = userService.findOrCreateOauthUser("existing@test.com", "Ignored Name", "WORKER");
+
+        assertTrue(result.isPresent());
+        assertEquals("existing@test.com", result.get().getEmail());
+        assertEquals("Existing User", result.get().getName());
+        verify(mockAccountRepo, never()).save(any(UserAccount.class));
+        verify(mockRoleRepo, never()).findByName(any(String.class));
+    }
 }
+

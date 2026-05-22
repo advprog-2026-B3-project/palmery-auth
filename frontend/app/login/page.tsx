@@ -1,153 +1,173 @@
 "use client";
 
+import "./login.css";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
-import { introspectToken, loginForToken, TokenResponse } from "@/lib/auth-api";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-
-type LoginState = {
-  email: string;
-  password: string;
-};
-
-const initialState: LoginState = {
-  email: "",
-  password: "",
-};
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { loginForToken } from "@/lib/auth-api";
+import { useAuth } from "@/context/AuthContext";
+import { getAuthApiBase } from "@/lib/auth-service";
+import {
+  buildCallbackWithToken,
+  getReturnUrlFromSearch,
+  getDefaultReturnUrl,
+} from "@/lib/return-url";
 
 export default function LoginPage() {
-  const [form, setForm] = useState<LoginState>(initialState);
-  const [token, setToken] = useState<TokenResponse | null>(null);
-  const [introspection, setIntrospection] = useState<Record<string, unknown> | null>(null);
+  const googleAuthUrl = `${getAuthApiBase()}/auth/google`;
+  const router = useRouter();
+  const auth = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [returnUrl, setReturnUrl] = useState<string | null>(null);
+  const registerHref = returnUrl
+    ? `/register?returnUrl=${encodeURIComponent(returnUrl)}`
+    : "/register";
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setStatus("Authenticating...");
-    setError(null);
-    setIntrospection(null);
+  const [registeredNotice, setRegisteredNotice] = useState<string | null>(null);
 
-    try {
-      const tokenResponse = await loginForToken(form.email, form.password);
-      setToken(tokenResponse);
-      setStatus("Authenticated. Access token generated.");
-    } catch (err) {
-      setToken(null);
-      setStatus(null);
-      setError(err instanceof Error ? err.message : "Unexpected error");
-    }
-  }
-
-  async function runIntrospection() {
-    if (!token?.access_token) {
+  useEffect(() => {
+    if (typeof window === "undefined") {
       return;
     }
 
-    setStatus("Running token introspection...");
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get("error");
+    if (oauthError) {
+      setError(oauthError.replace(/_/g, " "));
+    }
+
+    if (params.get("registered") === "1") {
+      setRegisteredNotice("Akun berhasil didaftarkan. Silakan login dengan email dan password Anda.");
+      window.history.replaceState({}, "", "/login");
+    }
+
+    // If force=login is set (coming from external app), clear auth session
+    if (params.get("force") === "login" && auth.isAuthenticated) {
+      auth.logout();
+      return;
+    }
+
+    setReturnUrl(
+      getReturnUrlFromSearch(window.location.search) ?? getDefaultReturnUrl(),
+    );
+  }, []);
+
+  // If user is already authenticated and there's a returnUrl, redirect immediately
+  // Only do this if the user didn't just come from a logout (check for "logout" param)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("force") === "login") return; // skip auto-redirect
+    if (auth.isAuthenticated && auth.token && returnUrl) {
+      window.location.href = buildCallbackWithToken(returnUrl, auth.token);
+    }
+  }, [auth.isAuthenticated, auth.token, returnUrl]);
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatus("Authenticating...");
     setError(null);
 
     try {
-      const response = await introspectToken(token.access_token);
-      setIntrospection(response);
-      setStatus("Introspection completed.");
+      const tokenResponse = await loginForToken(email, password);
+      if (returnUrl) {
+        auth.logout();
+        setStatus("Login berhasil. Mengalihkan ke aplikasi utama...");
+        window.location.href = buildCallbackWithToken(
+          returnUrl,
+          tokenResponse.access_token,
+        );
+        return;
+      }
+      auth.setToken(tokenResponse.access_token);
+      setStatus("Login berhasil. Redirecting to dashboard...");
+      router.replace("/dashboard");
     } catch (err) {
-      setIntrospection(null);
       setStatus(null);
       setError(err instanceof Error ? err.message : "Unexpected error");
     }
   }
 
   return (
-    <main className="page page-stack">
-      <header className="page-header">
-        <h1 className="page-title">Login + Token</h1>
-        <p className="page-subtitle">Exchange user credentials for OAuth-style access token.</p>
-      </header>
+    <div className="login-container">
+      
+      {/* LEFT SIDE */}
+      <div className="login-left">
+        <img
+          src="/palmery.svg"
+          alt="Palmery illustration"
+          className="login-image"
+        />
+        <h1 className="brand">Palmery</h1>
+        <p className="brand-subtitle">Access your account and manage orders, inventory, and users with a clean dashboard experience.</p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Credential Login</CardTitle>
-          <CardDescription>Uses grant type password via auth backend token endpoint.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="form-grid" onSubmit={onSubmit}>
-            <div className="field">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="debug@example.com"
-                value={form.email}
-                onChange={(event) => setForm({ ...form, email: event.target.value })}
-                required
-              />
-            </div>
+      {/* RIGHT SIDE */}
+      <div className="login-right">
 
-            <div className="field">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="********"
-                value={form.password}
-                onChange={(event) => setForm({ ...form, password: event.target.value })}
-                required
-              />
-            </div>
+        <div className="login-card">
+          <h2 className="title">Sign In</h2>
+          <p className="subtitle">Enter your email and password to continue to your MySawit account.</p>
 
-            <div className="action-row">
-              <Button type="submit">Login</Button>
-              <Button type="button" variant="secondary" onClick={() => setForm(initialState)}>
-                Reset
-              </Button>
-              <Button type="button" variant="outline" onClick={runIntrospection} disabled={!token?.access_token}>
-                Introspect Token
-              </Button>
-            </div>
+          {registeredNotice ? (
+            <div className="auth-banner auth-banner-success">{registeredNotice}</div>
+          ) : null}
+          {error ? <div className="auth-banner auth-banner-error">{error}</div> : null}
+          {status ? <div className="auth-banner auth-banner-success">{status}</div> : null}
+
+          <form onSubmit={onSubmit}>
+
+            <label>Email</label>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            <label>Password</label>
+            <input
+              type="password"
+              placeholder="********"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            <button type="submit">Log In</button>
           </form>
 
-          {status ? (
-            <p>
-              <Badge variant="success">status</Badge> {status}
+          <div className="oauth-actions">
+            <p>or continue with</p>
+            <a
+              className="google-button"
+              href={
+                returnUrl
+                  ? `${googleAuthUrl}?returnUrl=${encodeURIComponent(returnUrl)}`
+                  : googleAuthUrl
+              }
+            >
+              <span className="google-button-icon">G</span>
+              Login with Google
+            </a>
+          </div>
+
+          <div className="login-footer">
+            <p className="links">
+              Don’t have an account? <Link href={registerHref}>Create Account</Link>
             </p>
-          ) : null}
-
-          {error ? (
-            <p>
-              <Badge variant="danger">error</Badge> {error}
+            <p className="links">
+              Forgot Password? <Link href="#">Reset</Link>
             </p>
-          ) : null}
+          </div>
+        </div>
 
-          {token ? (
-            <div className="page-stack">
-              <div className="stats-grid">
-                <div className="stat-card">
-                  <p className="stat-label">Token Type</p>
-                  <p className="stat-value">{token.token_type}</p>
-                </div>
-                <div className="stat-card">
-                  <p className="stat-label">Expires In</p>
-                  <p className="stat-value">{token.expires_in} sec</p>
-                </div>
-              </div>
-              <pre className="pre-block">{token.access_token}</pre>
-            </div>
-          ) : null}
+      </div>
 
-          {introspection ? <pre className="pre-block">{JSON.stringify(introspection, null, 2)}</pre> : null}
-        </CardContent>
-      </Card>
-
-      <p className="inline-note">
-        <Link className="page-link" href="/">
-          Back to home
-        </Link>
-      </p>
-    </main>
+    </div>
   );
 }

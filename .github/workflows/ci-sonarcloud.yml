@@ -41,10 +41,13 @@ jobs:
         with:
           version: '10'
 
-      - name: Frontend install + build
+      - name: Frontend install + build + test
         working-directory: frontend
         run: |
-          pnpm install --frozen-lockfile
+          pnpm install --no-frozen-lockfile
+          pnpm test
+          # Fix paths in lcov.info to be relative to root
+          sed -i 's|SF:|SF:frontend/|g' coverage/lcov.info
           pnpm build
 
       - name: Backend Gradle Test + Coverage Report
@@ -68,27 +71,33 @@ jobs:
             exit 1
           fi
 
-      - name: SonarCloud Scan
-        uses: sonarsource/sonarqube-scan-action@v6
+      - name: Sonar Vulnerability Gate (PR)
+        if: github.event_name == 'pull_request'
         env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
-        with:
-          projectBaseDir: .
-          args: >
-            -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
-            -Dsonar.organization=${{ env.SONAR_ORGANIZATION }}
-            -Dsonar.projectName=palmery-auth
-            -Dsonar.sourceEncoding=UTF-8
-            -Dsonar.sources=backend/src/main,frontend/app,frontend/lib
-            -Dsonar.tests=backend/src/test
-            -Dsonar.java.binaries=backend/build/classes/java/main
-            -Dsonar.coverage.jacoco.xmlReportPaths=backend/build/reports/jacoco/test/jacocoTestReport.xml
-            -Dsonar.exclusions=**/.next/**,**/node_modules/**,**/build/**
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+        run: |
+          set -euo pipefail
+          query="pullRequest=${{ github.event.pull_request.number }}"
+          response=$(curl -sS -u "${SONAR_TOKEN}:" \
+            "${SONAR_HOST_URL}/api/issues/search?componentKeys=${SONAR_PROJECT_KEY}&types=VULNERABILITY&resolved=false&ps=1&${query}")
+          api_errors=$(echo "${response}" | jq '.errors | length // 0')
+          if [ "${api_errors}" -gt 0 ]; then
+            echo "Sonar API returned errors:"
+            echo "${response}" | jq -c '.errors'
+            exit 1
+          fi
+          total=$(echo "${response}" | jq -r '.total // 0')
+          echo "Sonar unresolved vulnerabilities: ${total}"
+          [ "${total}" -eq 0 ]
 
       - name: SonarCloud Quality Gate
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: SonarSource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
         env:
-          SONAR_HOST_URL: https://sonarcloud.io
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          pollingTimeoutSec: 300
+          args: -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }} -Dsonar.organization=${{ env.SONAR_ORGANIZATION }} -Dsonar.projectName=palmery-auth -Dsonar.host.url=https://sonarcloud.io -Dsonar.sourceEncoding=UTF-8 -Dsonar.sources=backend/src/main,frontend -Dsonar.tests=backend/src/test,frontend -Dsonar.test.inclusions=backend/src/test/**/*,frontend/**/*.test.ts,frontend/**/*.test.tsx -Dsonar.exclusions=**/*.test.ts,**/*.test.tsx,**/.next/**,**/node_modules/**,**/build/** -Dsonar.coverage.exclusions=frontend/app/**,frontend/components/ui/** -Dsonar.java.binaries=backend/build/classes/java/main -Dsonar.coverage.jacoco.xmlReportPaths=backend/build/reports/jacoco/test/jacocoTestReport.xml -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info -Dsonar.qualitygate.wait=true

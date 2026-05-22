@@ -1,138 +1,200 @@
 "use client";
 
+import "../login/login.css";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
-import { registerUser } from "@/lib/auth-api";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { registerUser, type RegisterPayload } from "@/lib/auth-api";
+import { getDefaultReturnUrl, getReturnUrlFromSearch } from "@/lib/return-url";
 
 type RegisterState = {
   name: string;
   email: string;
   password: string;
   role: string;
+  supervisorCertNumber?: string;
 };
 
 const initialState: RegisterState = {
   name: "",
   email: "",
   password: "",
-  role: "user",
+  role: "WORKER",
+  supervisorCertNumber: "",
 };
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [form, setForm] = useState<RegisterState>(initialState);
-  const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [returnUrl, setReturnUrl] = useState<string | null>(null);
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setReturnUrl(
+        getReturnUrlFromSearch(window.location.search) ?? getDefaultReturnUrl(),
+      );
+    }
+  }, []);
+
+  const loginHref = returnUrl
+    ? `/login?returnUrl=${encodeURIComponent(returnUrl)}`
+    : "/login";
+
+  useEffect(() => {
+    if (redirectCountdown === null) {
+      return;
+    }
+
+    if (redirectCountdown <= 0) {
+      router.replace(
+        returnUrl
+          ? `/login?registered=1&returnUrl=${encodeURIComponent(returnUrl)}`
+          : "/login?registered=1",
+      );
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setRedirectCountdown((current) => (current === null ? null : current - 1));
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [redirectCountdown, returnUrl, router]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("Registering account...");
     setError(null);
+    setIsSubmitting(true);
 
     try {
-      const message = await registerUser(form);
-      setStatus(message);
-      setForm(initialState);
+      if (form.role === "SUPERVISOR" && !form.supervisorCertNumber?.trim()) {
+        setError("Nomor Sertifikasi Mandor wajib diisi.");
+        return;
+      }
+
+      const payload: RegisterPayload = {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+      };
+
+      if (form.role === "SUPERVISOR") {
+        payload.supervisorCertNumber = form.supervisorCertNumber?.trim();
+      }
+
+      await registerUser(payload);
+      setRedirectCountdown(3);
     } catch (err) {
-      setStatus(null);
       setError(err instanceof Error ? err.message : "Unexpected error");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
+  const isRedirecting = redirectCountdown !== null;
+
   return (
-    <main className="page page-stack">
-      <header className="page-header">
-        <h1 className="page-title">Register User</h1>
-        <p className="page-subtitle">Creates a new user in the auth service.</p>
-      </header>
+    <div className="login-container">
+      <div className="login-left">
+        <img
+          src="/palmery.svg"
+          alt="Palmery illustration"
+          className="login-image"
+        />
+        <h1 className="brand">Palmery</h1>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Registration Form</CardTitle>
-          <CardDescription>Use this to seed users for login and token flow tests.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="form-grid" onSubmit={onSubmit}>
-            <div className="field">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                placeholder="Debug User"
-                value={form.name}
-                onChange={(event) => setForm({ ...form, name: event.target.value })}
-                required
-              />
-            </div>
+      <div className="login-right">
+        <div className="login-card">
+          <h2 className="title">Buat Akun</h2>
 
-            <div className="field">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="debug@example.com"
-                value={form.email}
-                onChange={(event) => setForm({ ...form, email: event.target.value })}
-                required
-              />
+          {isRedirecting ? (
+            <div className="auth-banner auth-banner-success">
+              Akun berhasil didaftarkan. Mengalihkan ke halaman login dalam{" "}
+              <strong>{redirectCountdown}</strong> detik...
             </div>
+          ) : null}
 
-            <div className="field">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="********"
-                value={form.password}
-                onChange={(event) => setForm({ ...form, password: event.target.value })}
-                required
-              />
-            </div>
+          {error ? <div className="auth-banner auth-banner-error">{error}</div> : null}
 
-            <div className="field">
-              <Label htmlFor="role">Role</Label>
-              <Select
-                id="role"
-                value={form.role}
-                onChange={(event) => setForm({ ...form, role: event.target.value })}
-              >
-                <option value="user">user</option>
-                <option value="admin">admin</option>
-                <option value="guest">guest</option>
-              </Select>
-            </div>
+          <form onSubmit={onSubmit}>
+            <label htmlFor="name">Nama</label>
+            <input
+              id="name"
+              type="text"
+              placeholder="Nama lengkap"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+              disabled={isRedirecting}
+            />
 
-            <div className="action-row">
-              <Button type="submit">Register</Button>
-              <Button type="button" variant="secondary" onClick={() => setForm(initialState)}>
-                Reset
-              </Button>
-            </div>
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              required
+              disabled={isRedirecting}
+            />
+
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              placeholder="********"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              required
+              disabled={isRedirecting}
+            />
+
+            <label htmlFor="role">Peran</label>
+            <select
+              id="role"
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+              disabled={isRedirecting}
+            >
+              <option value="WORKER">Buruh</option>
+              <option value="SUPERVISOR">Mandor</option>
+              <option value="DRIVER">Supir Truk</option>
+            </select>
+
+            {form.role === "SUPERVISOR" ? (
+              <>
+                <label htmlFor="supervisorCertNumber">Nomor Sertifikasi Mandor</label>
+                <input
+                  id="supervisorCertNumber"
+                  type="text"
+                  placeholder="Contoh: M-2024-XXXXX"
+                  value={form.supervisorCertNumber}
+                  onChange={(e) => setForm({ ...form, supervisorCertNumber: e.target.value })}
+                  required
+                  disabled={isRedirecting}
+                />
+              </>
+            ) : null}
+
+            <button type="submit" disabled={isRedirecting || isSubmitting}>
+              {isSubmitting ? "Mendaftarkan..." : "Register"}
+            </button>
           </form>
 
-          {status ? (
-            <p>
-              <Badge variant="success">status</Badge> {status}
-            </p>
-          ) : null}
-
-          {error ? (
-            <p>
-              <Badge variant="danger">error</Badge> {error}
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      <p className="inline-note">
-        <Link className="page-link" href="/">
-          Back to home
-        </Link>
-      </p>
-    </main>
+          <p className="links">
+            Sudah punya akun?{" "}
+            <Link href={loginHref}>
+              Login
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
