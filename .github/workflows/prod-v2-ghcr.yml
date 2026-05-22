@@ -1,9 +1,9 @@
-name: Prod V2 GHCR Publish
+name: Main GHCR Publish
 
 on:
   push:
     branches:
-      - prod-v2
+      - main
   workflow_dispatch:
 
 jobs:
@@ -42,8 +42,8 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: |
-            ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-backend:prod-v2
-            ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-backend:prod-v2-${{ github.sha }}
+            ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-backend:main
+            ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-backend:main-${{ github.sha }}
 
       - name: Build and push auth frontend image
         uses: docker/build-push-action@v6
@@ -57,5 +57,5 @@ jobs:
             NEXT_PUBLIC_ALLOWED_RETURN_ORIGINS=https://palmery.my.id
             NEXT_PUBLIC_APP_CALLBACK_URL=https://palmery.my.id/auth/callback
           tags: |
-            ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-frontend:prod-v2
-            ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-frontend:prod-v2-${{ github.sha }}
+            ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-frontend:main
+            ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-frontend:main-${{ github.sha }}
