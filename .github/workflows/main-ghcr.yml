@@ -40,7 +40,7 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
-          platforms: linux/arm64
+          platforms: linux/amd64,linux/arm64
           tags: |
             ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-backend:main
             ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-backend:main-${{ github.sha }}
@@ -51,7 +51,7 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          platforms: linux/arm64
+          platforms: linux/amd64,linux/arm64
           build-args: |
             NEXT_PUBLIC_AUTH_API_BASE_URL=https://api-auth.palmery.my.id
             NEXT_PUBLIC_ALLOWED_RETURN_ORIGINS=https://palmery.my.id
