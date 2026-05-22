@@ -20,26 +20,14 @@ public class DatabaseSeeder {
     ) {
         return args -> {
             Role adminRole = ensureRole(roleRepository, "ADMIN", "Admin utama sistem");
-            ensureRole(roleRepository, "SUPERVISOR", "Mandor / supervisor lapangan");
-            ensureRole(roleRepository, "WORKER", "Pekerja / buruh");
-            ensureRole(roleRepository, "DRIVER", "Supir");
+            Role supervisorRole = ensureRole(roleRepository, "SUPERVISOR", "Mandor / supervisor lapangan");
+            Role workerRole = ensureRole(roleRepository, "WORKER", "Pekerja / buruh");
+            Role driverRole = ensureRole(roleRepository, "DRIVER", "Supir");
 
-            String adminEmail = "admin@palmery.local";
-
-            if (userAccountRepository.existsByEmail(adminEmail)) {
-                return;
-            }
-
-            String encodedPassword = passwordEncoder.encode("admin123");
-
-            UserAccount admin = new UserAccount(
-                    "Admin Utama",
-                    adminEmail,
-                    encodedPassword,
-                    adminRole
-            );
-
-            userAccountRepository.save(admin);
+            ensureUser(userAccountRepository, passwordEncoder, "Admin Utama", "admin@palmery.local", "admin123", adminRole);
+            ensureUser(userAccountRepository, passwordEncoder, "Mandor Test", "mandor@palmery.local", "mandor123", supervisorRole);
+            ensureUser(userAccountRepository, passwordEncoder, "Supir Test", "supir@palmery.local", "supir123", driverRole);
+            ensureUser(userAccountRepository, passwordEncoder, "Buruh Test", "buruh@palmery.local", "buruh123", workerRole);
         };
     }
 
@@ -47,5 +35,21 @@ public class DatabaseSeeder {
         return roleRepository.findByName(name)
                 .orElseGet(() -> roleRepository.save(new Role(name, description)));
     }
-}
 
+    private void ensureUser(UserAccountRepository userAccountRepository,
+                            PasswordEncoder passwordEncoder,
+                            String name,
+                            String email,
+                            String password,
+                            Role role) {
+        if (userAccountRepository.existsByEmail(email)) {
+            return;
+        }
+        userAccountRepository.save(new UserAccount(
+                name,
+                email,
+                passwordEncoder.encode(password),
+                role
+        ));
+    }
+}

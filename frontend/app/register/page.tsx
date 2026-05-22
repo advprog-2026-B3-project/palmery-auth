@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerUser, type RegisterPayload } from "@/lib/auth-api";
+import { getDefaultReturnUrl, getReturnUrlFromSearch } from "@/lib/return-url";
 
 type RegisterState = {
   name: string;
@@ -26,8 +27,13 @@ export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState<RegisterState>(initialState);
   const [error, setError] = useState<string | null>(null);
+  const [returnUrl, setReturnUrl] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const loginHref = returnUrl
+    ? `/login?returnUrl=${encodeURIComponent(returnUrl)}`
+    : "/login";
 
   useEffect(() => {
     if (redirectCountdown === null) {
@@ -35,7 +41,11 @@ export default function RegisterPage() {
     }
 
     if (redirectCountdown <= 0) {
-      router.replace("/login?registered=1");
+      router.replace(
+        returnUrl
+          ? `/login?registered=1&returnUrl=${encodeURIComponent(returnUrl)}`
+          : "/login?registered=1",
+      );
       return;
     }
 
@@ -44,7 +54,17 @@ export default function RegisterPage() {
     }, 1000);
 
     return () => window.clearTimeout(timer);
-  }, [redirectCountdown, router]);
+  }, [redirectCountdown, returnUrl, router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    setReturnUrl(
+      getReturnUrlFromSearch(window.location.search) ?? getDefaultReturnUrl(),
+    );
+  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -171,13 +191,7 @@ export default function RegisterPage() {
 
           <p className="links">
             Sudah punya akun?{" "}
-            <Link
-              href={
-                returnUrl
-                  ? `/login?returnUrl=${encodeURIComponent(returnUrl)}`
-                  : "/login"
-              }
-            >
+            <Link href={loginHref}>
               Login
             </Link>
           </p>

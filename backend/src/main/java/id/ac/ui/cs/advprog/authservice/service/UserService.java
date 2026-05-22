@@ -152,8 +152,9 @@ public class UserService {
     }
 
     private User mapToUser(UserAccount account) {
+        String id = account.getId() == null ? UUID.randomUUID().toString() : account.getId().toString();
         return new User(
-                account.getId().toString(),
+                id,
                 account.getName(),
                 account.getEmail(),
                 account.getPasswordHash(),
@@ -173,4 +174,3 @@ public class UserService {
         return userAccountRepository.findByIdInAndActiveTrue(ids);
     }
 }
-
