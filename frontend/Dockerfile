@@ -3,7 +3,8 @@ FROM node:22-alpine AS deps
 WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+COPY pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile --config.allow-build=esbuild --config.allow-build=sharp
 
 FROM node:22-alpine AS builder
 
@@ -12,7 +13,11 @@ RUN corepack enable
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ARG NEXT_PUBLIC_AUTH_API_BASE_URL=http://localhost:8080
+ARG NEXT_PUBLIC_ALLOWED_RETURN_ORIGINS=http://localhost:3001
+ARG NEXT_PUBLIC_APP_CALLBACK_URL=http://localhost:3001/auth/callback
 ENV NEXT_PUBLIC_AUTH_API_BASE_URL=${NEXT_PUBLIC_AUTH_API_BASE_URL}
+ENV NEXT_PUBLIC_ALLOWED_RETURN_ORIGINS=${NEXT_PUBLIC_ALLOWED_RETURN_ORIGINS}
+ENV NEXT_PUBLIC_APP_CALLBACK_URL=${NEXT_PUBLIC_APP_CALLBACK_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
 

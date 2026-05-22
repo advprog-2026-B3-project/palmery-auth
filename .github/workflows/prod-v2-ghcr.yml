@@ -1,0 +1,61 @@
+name: Prod V2 GHCR Publish
+
+on:
+  push:
+    branches:
+      - prod-v2
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USERNAME || github.repository_owner }}
+          password: ${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}
+
+      - name: Normalize owner name
+        id: owner
+        run: echo "value=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push auth backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          platforms: linux/arm64
+          tags: |
+            ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-backend:prod-v2
+            ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-backend:prod-v2-${{ github.sha }}
+
+      - name: Build and push auth frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          platforms: linux/arm64
+          build-args: |
+            NEXT_PUBLIC_AUTH_API_BASE_URL=https://api-auth.palmery.my.id
+            NEXT_PUBLIC_ALLOWED_RETURN_ORIGINS=https://palmery.my.id
+            NEXT_PUBLIC_APP_CALLBACK_URL=https://palmery.my.id/auth/callback
+          tags: |
+            ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-frontend:prod-v2
+            ghcr.io/${{ steps.owner.outputs.value }}/palmery-auth-frontend:prod-v2-${{ github.sha }}

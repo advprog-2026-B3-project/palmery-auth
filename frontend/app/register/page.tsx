@@ -31,6 +31,14 @@ export default function RegisterPage() {
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setReturnUrl(
+        getReturnUrlFromSearch(window.location.search) ?? getDefaultReturnUrl(),
+      );
+    }
+  }, []);
+
   const loginHref = returnUrl
     ? `/login?returnUrl=${encodeURIComponent(returnUrl)}`
     : "/login";
@@ -55,16 +63,6 @@ export default function RegisterPage() {
 
     return () => window.clearTimeout(timer);
   }, [redirectCountdown, returnUrl, router]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    setReturnUrl(
-      getReturnUrlFromSearch(window.location.search) ?? getDefaultReturnUrl(),
-    );
-  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
