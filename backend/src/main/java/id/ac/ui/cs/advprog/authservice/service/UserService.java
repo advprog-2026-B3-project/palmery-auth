@@ -172,5 +172,45 @@ public class UserService {
         }
         return userAccountRepository.findByIdInAndActiveTrue(ids);
     }
+
+    /**
+     * Mencari user aktif berdasarkan kombinasi filter (search nama, email, role).
+     * Setiap filter opsional; nilai null/blank dianggap "tidak memfilter".
+     */
+    public List<UserAccount> searchAccounts(String name, String email, String role) {
+        String roleName = (role == null || role.isBlank()) ? null : resolveRoleName(role);
+        String nameLike = (name == null || name.isBlank()) ? null : name.trim();
+        String emailLike = (email == null || email.isBlank()) ? null : email.trim();
+        return userAccountRepository.searchActiveAccounts(roleName, nameLike, emailLike);
+    }
+
+    public Optional<UserAccount> findAccountById(UUID id) {
+        if (id == null) return Optional.empty();
+        return userAccountRepository.findById(id);
+    }
+
+    /**
+     * Soft-delete user dengan menonaktifkan flag {@code active}. Admin tidak dapat
+     * menghapus dirinya sendiri.
+     *
+     * @return true jika berhasil di-deactivate, false jika user tidak ditemukan
+     * @throws IllegalArgumentException jika requesterId == targetId
+     */
+    public boolean deactivateAccount(UUID targetId, UUID requesterId) {
+        if (targetId == null) {
+            return false;
+        }
+        if (requesterId != null && requesterId.equals(targetId)) {
+            throw new IllegalArgumentException("Admin tidak dapat menghapus akunnya sendiri");
+        }
+        return userAccountRepository.findById(targetId).map(account -> {
+            if (!account.isActive()) {
+                return true;
+            }
+            account.setActive(false);
+            userAccountRepository.save(account);
+            return true;
+        }).orElse(false);
+    }
 }
 
